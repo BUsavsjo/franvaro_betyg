@@ -1,6 +1,7 @@
 import os
 import xlrd
 import xlwt
+from config_paths import RAW_FRANVARO_DIR, OUTPUT_DIR
 
 
 def busavsjo_samla_franvarorapporter():
@@ -8,9 +9,8 @@ def busavsjo_samla_franvarorapporter():
     Slår ihop alla .xls-filer i ``data/raw/franvaro`` till en fil (``data/output/franvaro.xls``),
     behåller bara rubriken från första filen och hoppar över de fyra första raderna i resten.
     """
-    rotmapp = os.path.dirname(os.path.dirname(__file__))
-    indata_mapp = os.path.join(rotmapp, "data", "raw", "franvaro")
-    output_fil = os.path.join(rotmapp, "data", "output", "franvaro.xls")
+    indata_mapp = RAW_FRANVARO_DIR
+    output_fil = os.path.join(OUTPUT_DIR, "franvaro.xls")
 
     wb_out = xlwt.Workbook()
     ws_out = wb_out.add_sheet("Data")
