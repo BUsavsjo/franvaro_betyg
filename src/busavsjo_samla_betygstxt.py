@@ -1,12 +1,11 @@
 import os
 
 def busavsjo_samla_txtfiler():
-    """
-    Läser in alla .txt-filer i data/import data betyg och sparar ihop dem till data/betyg.txt
-    """
+    """Läser in alla .txt-filer i ``data/raw/betyg`` och
+    sparar ihop dem till ``data/output/betyg.txt``"""
     rotmapp = os.path.dirname(os.path.dirname(__file__))
-    indata_mapp = os.path.join(rotmapp, "data", "import data betyg")
-    utdata_fil = os.path.join(rotmapp, "data", "betyg.txt")
+    indata_mapp = os.path.join(rotmapp, "data", "raw", "betyg")
+    utdata_fil = os.path.join(rotmapp, "data", "output", "betyg.txt")
     med_antal = 0
 
     with open(utdata_fil, "w", encoding="utf-8") as utfil:

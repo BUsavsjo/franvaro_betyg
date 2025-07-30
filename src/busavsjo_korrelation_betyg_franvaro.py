@@ -5,7 +5,7 @@ from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
 
 # === INSTÄLLNINGAR ===
-DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data")
+DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data", "output")
 FIL_FRANVARO = os.path.join(DATA_MAPP, "franvaro_rensad_kategoriserad.xlsx")
 FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
