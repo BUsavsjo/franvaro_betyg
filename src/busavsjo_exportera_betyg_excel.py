@@ -1,5 +1,6 @@
 import openpyxl
 import os
+from config_paths import OUTPUT_DIR
 
 # Definiera rubrikerna
 headers = [
@@ -9,8 +10,8 @@ headers = [
     "Sv", "Sva", "Tn", "Tk", "Ovr"
 ]
 
-# Sätt sökvägar
-DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data", "output")
+# Sätt sökvägar via konfigurerade mappar
+DATA_MAPP = OUTPUT_DIR
 TXT_FIL = os.path.join(DATA_MAPP, "betyg.txt")
 EXCEL_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 

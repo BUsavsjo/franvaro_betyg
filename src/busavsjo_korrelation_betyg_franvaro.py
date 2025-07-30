@@ -3,9 +3,10 @@ import hashlib
 import os
 from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
+from config_paths import OUTPUT_DIR
 
 # === INSTÄLLNINGAR ===
-DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data", "output")
+DATA_MAPP = OUTPUT_DIR
 FIL_FRANVARO = os.path.join(DATA_MAPP, "franvaro_rensad_kategoriserad.xlsx")
 FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
