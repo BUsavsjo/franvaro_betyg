@@ -16,5 +16,5 @@ Projektet använder en **raw/output**-struktur under `data/`:
 Kör hela flödet med:
 
 ```bash
-python -m franvaro_betyg.busavsjo_pipeline
+python src/busavsjo_pipeline.py
 ```
