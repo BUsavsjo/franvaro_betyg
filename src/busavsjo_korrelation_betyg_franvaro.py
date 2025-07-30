@@ -8,6 +8,7 @@ FIL_FRANVARO = os.path.join(DATA_MAPP, "franvaro_rensad_kategoriserad.xlsx")
 FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 OUTPUT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.xlsx")
+RESULTAT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.xlsx")
 BETYGSKOLUMNER = ["Ma", "En", "Sh"]
 
 # === FUNKTIONER ===
@@ -47,6 +48,9 @@ franvaro_df["total_frånvaro"] = 100 - franvaro_df["närvaro_pct"]
 # === STEG 3: Slå ihop data ===
 samman_df = pd.merge(betyg_df, franvaro_df, on="AnonymID")
 
+# Behåll korrelationsresultat i en lista
+korrelationer = []
+
 # === STEG 4: Korrelation ===
 print("\n📊 Korrelation mellan betyg och frånvaro:")
 for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
@@ -55,9 +59,16 @@ for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
             try:
                 corr = samman_df[betyg].corr(samman_df[kol])
                 print(f"{betyg} vs {kol}: {corr:.2f}")
+                korrelationer.append({"betyg": betyg, "franvaro": kol, "korrelation": corr})
             except Exception as e:
                 print(f"{betyg} vs {kol}: Fel: {e}")
 
 # === STEG 5: Spara sammanfogad data ===
 samman_df.to_excel(OUTPUT_FIL, index=False)
 print(f"\n✔️ Klar! Data sparades till '{OUTPUT_FIL}'")
+
+# === STEG 6: Spara korrelationsresultat ===
+if korrelationer:
+    resultat_df = pd.DataFrame(korrelationer)
+    resultat_df.to_excel(RESULTAT_FIL, index=False)
+    print(f"✔️ Korrelationer sparades till '{RESULTAT_FIL}'")
