@@ -1,4 +1,15 @@
 
 # Ignorera allt i data/
 data/*
-!data/.gitkeep
+
+# Behåll importmapparna
+!data/import data betyg/
+!data/import data franvaro/
+
+# Ignorera allt i dem
+data/import data betyg/*
+data/import data franvaro/*
+
+# Men tillåt att .gitkeep-versioneringsfilen följer med
+!data/import data betyg/.gitkeep
+!data/import data franvaro/.gitkeep
