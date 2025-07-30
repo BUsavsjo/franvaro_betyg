@@ -1,0 +1,4 @@
+
+# Ignorera allt i data/
+data/*
+!data/.gitkeep
