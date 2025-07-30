@@ -2,14 +2,20 @@
 # Ignorera allt i data/
 data/*
 
-# Behåll importmapparna
-!data/import data betyg/
-!data/import data franvaro/
+# Tillåt nya undermappar
+!data/raw/
+!data/output/
 
 # Ignorera allt i dem
-data/import data betyg/*
-data/import data franvaro/*
+data/raw/*
+data/output/*
 
-# Men tillåt att .gitkeep-versioneringsfilen följer med
-!data/import data betyg/.gitkeep
-!data/import data franvaro/.gitkeep
+# Men behåll .gitkeep-filer och underkataloger
+!data/raw/.gitkeep
+!data/raw/betyg/
+data/raw/betyg/*
+!data/raw/betyg/.gitkeep
+!data/raw/franvaro/
+data/raw/franvaro/*
+!data/raw/franvaro/.gitkeep
+!data/output/.gitkeep

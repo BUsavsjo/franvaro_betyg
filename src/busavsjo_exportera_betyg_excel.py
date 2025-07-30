@@ -1,5 +1,4 @@
 import openpyxl
-from datetime import datetime
 import os
 
 # Definiera rubrikerna
@@ -11,7 +10,7 @@ headers = [
 ]
 
 # Sätt sökvägar
-DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data")
+DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data", "output")
 TXT_FIL = os.path.join(DATA_MAPP, "betyg.txt")
 EXCEL_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 
@@ -25,43 +24,49 @@ def formatera_personnummer(pnr):
         return pnr[2:8] + "-" + pnr[8:]
     return pnr
 
-# Försök att läsa in filen som UTF-8
-try:
-    with open(TXT_FIL, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
-except UnicodeDecodeError:
-    # Om det misslyckas, försök med cp1252 och ersätt icke-dekodbara tecken
-    with open(TXT_FIL, 'r', encoding='cp1252', errors='replace') as f:
-        lines = f.readlines()
+def exportera_betyg_excel():
+    """Läser ``betyg.txt`` och skapar ``betyg.xlsx`` i output-mappen."""
 
-# Skapa en ny arbetsbok
-wb = openpyxl.Workbook()
-ws = wb.active
+    # Försök att läsa in filen som UTF-8
+    try:
+        with open(TXT_FIL, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except UnicodeDecodeError:
+        # Om det misslyckas, försök med cp1252 och ersätt icke-dekodbara tecken
+        with open(TXT_FIL, 'r', encoding='cp1252', errors='replace') as f:
+            lines = f.readlines()
 
-# Skriv in rubrikerna på första raden
-ws.append(headers)
+    # Skapa en ny arbetsbok
+    wb = openpyxl.Workbook()
+    ws = wb.active
 
-# Bearbeta varje rad i betyg.txt
-for line in lines:
-    line = line.strip()
-    if not line:
-        continue  # hoppa över tomma rader
+    # Skriv in rubrikerna på första raden
+    ws.append(headers)
 
-    row = line.split(';')
+    # Bearbeta varje rad i betyg.txt
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue  # hoppa över tomma rader
 
-    if len(row) > 3:
-        row[3] = formatera_personnummer(row[3])  # kolumn 4 = PersonNr
+        row = line.split(';')
 
-    # Justera om raden har fler eller färre fält än headers
-    if len(row) > len(headers):
-        row = row[:len(headers)]
-    elif len(row) < len(headers):
-        row += [''] * (len(headers) - len(row))
+        if len(row) > 3:
+            row[3] = formatera_personnummer(row[3])  # kolumn 4 = PersonNr
 
-    ws.append(row)
+        # Justera om raden har fler eller färre fält än headers
+        if len(row) > len(headers):
+            row = row[:len(headers)]
+        elif len(row) < len(headers):
+            row += [''] * (len(headers) - len(row))
 
-# Spara arbetsboken
-wb.save(EXCEL_FIL)
+        ws.append(row)
 
-# Skriv ut ett meddelande om att allt lyckades
-print(f"Filen {EXCEL_FIL} har skapats framgångsrikt.")
+    # Spara arbetsboken
+    wb.save(EXCEL_FIL)
+
+    print(f"Filen {EXCEL_FIL} har skapats framgångsrikt.")
+
+
+if __name__ == "__main__":
+    exportera_betyg_excel()
