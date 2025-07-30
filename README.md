@@ -18,3 +18,12 @@ Kör hela flödet med:
 ```bash
 python src/busavsjo_pipeline.py
 ```
+
+## Installera beroenden
+
+Innan du kör flödet behöver du installera de Python-paket som projektet kräver.
+Detta görs med:
+
+```bash
+pip install -r requirements.txt
+```
