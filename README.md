@@ -19,6 +19,9 @@ Kör hela flödet med:
 python src/busavsjo_pipeline.py
 ```
 
+Pipelinen kontrollerar automatiskt att nödvändiga Python-beroenden finns och att
+datamapparna är skapade. Saknas något får du ett tydligt felmeddelande.
+
 ## Installera beroenden
 
 Innan du kör flödet behöver du installera de Python-paket som projektet kräver.
