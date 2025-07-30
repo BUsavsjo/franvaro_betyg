@@ -11,6 +11,8 @@ FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 OUTPUT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.xlsx")
 RESULTAT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.xlsx")
+OUTPUT_PARQUET = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.parquet")
+RESULTAT_PARQUET = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.parquet")
 
 IGNORERA_KOLUMNER = {
     "System", "Datum", "Version", "Skolenhetskod",
@@ -107,7 +109,8 @@ for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
 
 # === STEG 5 ===
 samman_df.to_excel(OUTPUT_FIL, index=False)
-print(f"\n✔️ Klar! Data sparades till '{OUTPUT_FIL}'")
+samman_df.to_parquet(OUTPUT_PARQUET, index=False)
+print(f"\n✔️ Klar! Data sparades till '{OUTPUT_FIL}' och '{OUTPUT_PARQUET}'")
 
 # === STEG 6 ===
 if korrelationer:
@@ -118,6 +121,8 @@ if korrelationer:
     with pd.ExcelWriter(RESULTAT_FIL, engine='openpyxl') as writer:
         ogiltig_df.to_excel(writer, index=False, sheet_name="Ogiltig frånvaro")
         total_df.to_excel(writer, index=False, sheet_name="Total frånvaro")
+
+    resultat_df.to_parquet(RESULTAT_PARQUET, index=False)
 
     wb = load_workbook(RESULTAT_FIL)
     for bladnamn in ["Ogiltig frånvaro", "Total frånvaro"]:
@@ -133,3 +138,4 @@ if korrelationer:
                 continue
     wb.save(RESULTAT_FIL)
     print(f"✔️ Färgkodad Excel-fil sparad till '{RESULTAT_FIL}'")
+    print(f"✔️ Resultat även sparat som parquet i '{RESULTAT_PARQUET}'")
