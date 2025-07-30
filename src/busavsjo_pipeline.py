@@ -3,11 +3,11 @@
 import runpy
 
 MODULER = [
-    "franvaro_betyg.busavsjo_samla_betygstxt",
-    "franvaro_betyg.busavsjo_exportera_betyg_excel",
-    "franvaro_betyg.busavsjo_samla_franvaro",
-    "franvaro_betyg.busavsjo_rensa_franvaro_excel",
-    "franvaro_betyg.busavsjo_korrelation_betyg_franvaro",
+    "busavsjo_samla_betygstxt",
+    "busavsjo_exportera_betyg_excel",
+    "busavsjo_samla_franvaro",
+    "busavsjo_rensa_franvaro_excel",
+    "busavsjo_korrelation_betyg_franvaro",
 ]
 
 
