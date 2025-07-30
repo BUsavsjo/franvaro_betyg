@@ -9,7 +9,13 @@ FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 OUTPUT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.xlsx")
 RESULTAT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.xlsx")
-BETYGSKOLUMNER = ["Ma", "En", "Sh"]
+# Dessa kolumner innehåller inte ämnesbetyg och ska ignoreras
+IGNORERA_KOLUMNER = {
+    "System", "Datum", "Version", "Skolenhetskod",
+    "Klass", "Förnamn", "Efternamn", "PersonNr",
+}
+
+BETYGSKOLUMNER = None  # kommer att sättas dynamiskt efter inläsning
 
 # === FUNKTIONER ===
 def normalisera_personnummer(pnr):
@@ -32,8 +38,18 @@ def mappa_betyg_till_siffra(df, kolumner):
 
 # === STEG 1: Läs in och anonymisera betygsdata ===
 betyg_df = pd.read_excel(BETYG_FIL, dtype={"PersonNr": str})
-betyg_df["AnonymID"] = betyg_df["PersonNr"].apply(normalisera_personnummer).apply(skapa_anonym_id)
-betyg_df.drop(columns=["PersonNr", "Förnamn", "Efternamn"], inplace=True)
+
+# Identifiera alla kolumner som innehåller betyg
+BETYGSKOLUMNER = [
+    kol for kol in betyg_df.columns
+    if kol not in IGNORERA_KOLUMNER
+]
+
+betyg_df["AnonymID"] = (
+    betyg_df["PersonNr"].apply(normalisera_personnummer).apply(skapa_anonym_id)
+)
+betyg_df.drop(columns=[c for c in IGNORERA_KOLUMNER if c in betyg_df.columns], inplace=True)
+
 betyg_df = mappa_betyg_till_siffra(betyg_df, BETYGSKOLUMNER)
 
 # === STEG 2: Läs in frånvarodata från rensad fil ===
