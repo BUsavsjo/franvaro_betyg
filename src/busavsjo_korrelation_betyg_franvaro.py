@@ -1,6 +1,5 @@
 import pandas as pd
 import hashlib
-import os
 import json
 from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
@@ -8,12 +7,12 @@ from config_paths import OUTPUT_DIR
 
 # === INSTÄLLNINGAR ===
 DATA_MAPP = OUTPUT_DIR
-FIL_FRANVARO = os.path.join(DATA_MAPP, "franvaro_rensad_kategoriserad.xlsx")
+FIL_FRANVARO = DATA_MAPP / "franvaro_rensad_kategoriserad.xlsx"
 FRANVARO_FLIK = "Rensad data"
-BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
-OUTPUT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.xlsx")
-RESULTAT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.xlsx")
-JSON_MAPP = os.path.join(DATA_MAPP, "json")
+BETYG_FIL = DATA_MAPP / "betyg.xlsx"
+OUTPUT_FIL = DATA_MAPP / "busavsjo_korrelation_input.xlsx"
+RESULTAT_FIL = DATA_MAPP / "busavsjo_korrelation_resultat.xlsx"
+JSON_MAPP = DATA_MAPP / "json"
 
 IGNORERA_KOLUMNER = {
     "System", "Datum", "Version", "Skolenhetskod",
@@ -145,8 +144,8 @@ if korrelationer:
     wb.save(RESULTAT_FIL)
     print(f"✔️ Färgkodad Excel-fil sparad till '{RESULTAT_FIL}'")
 
- # === STEG 7 ===
-os.makedirs(JSON_MAPP, exist_ok=True)
+# === STEG 7 ===
+JSON_MAPP.mkdir(parents=True, exist_ok=True)
 
 # Tvinga bort NaN och avrunda giltiga värden
 ogiltig_df_clean = ogiltig_df.copy()
@@ -158,10 +157,10 @@ total_df_clean["Korrelation"] = total_df_clean["Korrelation"].apply(lambda x: ro
 ogiltig_df_clean = ogiltig_df_clean.where(pd.notna(ogiltig_df_clean), None)
 total_df_clean = total_df_clean.where(pd.notna(total_df_clean), None)
 
-with open(os.path.join(JSON_MAPP, "ogiltig_franvaro.json"), "w", encoding="utf-8") as f:
+with (JSON_MAPP / "ogiltig_franvaro.json").open("w", encoding="utf-8") as f:
     json.dump(ogiltig_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
 
-with open(os.path.join(JSON_MAPP, "total_franvaro.json"), "w", encoding="utf-8") as f:
+with (JSON_MAPP / "total_franvaro.json").open("w", encoding="utf-8") as f:
     json.dump(total_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
 
 print(f"✔️ JSON-data sparad i '{JSON_MAPP}'")

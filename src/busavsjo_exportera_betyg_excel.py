@@ -1,5 +1,4 @@
 import openpyxl
-import os
 from config_paths import OUTPUT_DIR
 
 # Definiera rubrikerna
@@ -12,8 +11,8 @@ headers = [
 
 # Sätt sökvägar via konfigurerade mappar
 DATA_MAPP = OUTPUT_DIR
-TXT_FIL = os.path.join(DATA_MAPP, "betyg.txt")
-EXCEL_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
+TXT_FIL = DATA_MAPP / "betyg.txt"
+EXCEL_FIL = DATA_MAPP / "betyg.xlsx"
 
 # Funktion för att formattera personnummer till YYMMDD-XXXX utan apostrof
 
@@ -30,11 +29,11 @@ def exportera_betyg_excel():
 
     # Försök att läsa in filen som UTF-8
     try:
-        with open(TXT_FIL, 'r', encoding='utf-8') as f:
+        with TXT_FIL.open('r', encoding='utf-8') as f:
             lines = f.readlines()
     except UnicodeDecodeError:
         # Om det misslyckas, försök med cp1252 och ersätt icke-dekodbara tecken
-        with open(TXT_FIL, 'r', encoding='cp1252', errors='replace') as f:
+        with TXT_FIL.open('r', encoding='cp1252', errors='replace') as f:
             lines = f.readlines()
 
     # Skapa en ny arbetsbok

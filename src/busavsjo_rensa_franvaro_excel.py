@@ -3,11 +3,10 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Alignment, Font, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 import re
-import os
-
-DATA_MAPP = os.path.join(os.path.dirname(__file__), "..", "data", "output")
-FIL_IN = os.path.join(DATA_MAPP, "franvaro.xls")
-FIL_UT = os.path.join(DATA_MAPP, "franvaro_rensad_kategoriserad.xlsx")
+from config_paths import OUTPUT_DIR
+DATA_MAPP = OUTPUT_DIR
+FIL_IN = DATA_MAPP / "franvaro.xls"
+FIL_UT = DATA_MAPP / "franvaro_rensad_kategoriserad.xlsx"
 
 def rensa_franvaro_excel():
     """Rensar och summerar frånvarodata från ``franvaro.xls``."""
