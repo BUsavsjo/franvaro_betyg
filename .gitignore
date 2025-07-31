@@ -19,3 +19,6 @@ data/raw/betyg/*
 data/raw/franvaro/*
 !data/raw/franvaro/.gitkeep
 !data/output/.gitkeep
+
+__pycache__/
+*.py[cod]
