@@ -1,3 +1,4 @@
+# busavsjo_korrelation_betyg_franvaro.py (uppdaterad version)
 import pandas as pd
 import hashlib
 import json
@@ -19,7 +20,9 @@ IGNORERA_KOLUMNER = {
     "Klass", "Förnamn", "Efternamn", "PersonNr",
 }
 BETYGSKOLUMNER = None
+MODERNA_SPRÅK_KOLUMNER = {"M1(betyg)", "M2(betyg)"}
 
+# === FUNKTIONER ===
 def normalisera_personnummer(pnr):
     try:
         return str(pnr).strip()
@@ -86,39 +89,34 @@ franvaro_df["total_frånvaro"] = 100 - franvaro_df["närvaro_pct"]
 # === STEG 3 ===
 samman_df = pd.merge(betyg_df, franvaro_df, on="AnonymID")
 
+# === Infoga meritvärde före export ===
+betygspoang = {'F': 0, 'E': 10, 'D': 12.5, 'C': 15, 'B': 17.5, 'A': 20}
+
+def meritvarde(rad):
+    poang = [betygspoang.get(b, 0) for b in rad if pd.notna(b)]
+    topp = 17 if MODERNA_SPRÅK_KOLUMNER.intersection(BETYGSKOLUMNER) else 16
+    return sum(sorted(poang, reverse=True)[:topp])
+
+samman_df["meritvarde"] = samman_df[BETYGSKOLUMNER].apply(meritvarde, axis=1)
+
 # === STEG 4 ===
 korrelationer = []
-print("\n📊 Korrelation mellan betyg och frånvaro:\n")
-
 for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
-    print(f"📘 Ämne: {betyg.replace('_num', '')}")
     for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
         if betyg in samman_df.columns and kol in samman_df.columns:
-            serie_x = samman_df[betyg]
-            serie_y = samman_df[kol]
-
-            # Kontrollera att det finns tillräckligt med värden
-            if serie_x.notna().sum() >= 2 and serie_y.notna().sum() >= 2:
-                corr = serie_x.corr(serie_y)
+            x, y = samman_df[betyg], samman_df[kol]
+            if x.notna().sum() >= 2 and y.notna().sum() >= 2:
+                corr = x.corr(y)
                 if pd.notna(corr):
-                    tolkning = tolka_korrelation(corr)
-                    print(f"  → Mot {kol}: {corr:.2f}\n     {tolkning}")
                     korrelationer.append({
                         "Ämne": betyg.replace("_num", ""),
                         "Frånvarotyp": kol,
                         "Korrelation": round(corr, 2),
-                        "Styrka": tolkning
+                        "Styrka": tolka_korrelation(corr)
                     })
-                else:
-                    print(f"  → Mot {kol}: otillräcklig data (NaN)")
-            else:
-                print(f"  → Mot {kol}: för få datapunkter (<2)")
-    print("")
 
 # === STEG 5 ===
 samman_df.to_excel(OUTPUT_FIL, index=False)
-print(f"\n✔️ Klar! Data sparades till '{OUTPUT_FIL}'")
-
 # === STEG 6 ===
 if korrelationer:
     resultat_df = pd.DataFrame(korrelationer)
@@ -142,26 +140,62 @@ if korrelationer:
             except:
                 continue
     wb.save(RESULTAT_FIL)
-    print(f"✔️ Färgkodad Excel-fil sparad till '{RESULTAT_FIL}'")
 
 # === STEG 7 ===
 JSON_MAPP.mkdir(parents=True, exist_ok=True)
 
-# Tvinga bort NaN och avrunda giltiga värden
-ogiltig_df_clean = ogiltig_df.copy()
-total_df_clean = total_df.copy()
+def spara_json(df, filnamn):
+    df_clean = df.copy()
+    df_clean["Korrelation"] = df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
+    df_clean = df_clean.where(pd.notna(df_clean), None)
+    with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
+        json.dump(df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
 
-ogiltig_df_clean["Korrelation"] = ogiltig_df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
-total_df_clean["Korrelation"] = total_df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
+spara_json(ogiltig_df, "ogiltig_franvaro.json")
+spara_json(total_df, "total_franvaro.json")
 
-ogiltig_df_clean = ogiltig_df_clean.where(pd.notna(ogiltig_df_clean), None)
-total_df_clean = total_df_clean.where(pd.notna(total_df_clean), None)
+# === STEG 8 ===
+print("\n📊 Korrelation mellan MERITVÄRDE och frånvaro:\n")
+betygspoang = {'F': 0, 'E': 10, 'D': 12.5, 'C': 15, 'B': 17.5, 'A': 20}
 
-with (JSON_MAPP / "ogiltig_franvaro.json").open("w", encoding="utf-8") as f:
-    json.dump(ogiltig_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
+def meritvarde(rad):
+    poang = [betygspoang.get(b, 0) for b in rad if pd.notna(b)]
+    topp = 17 if MODERNA_SPRÅK_KOLUMNER.intersection(BETYGSKOLUMNER) else 16
+    return sum(sorted(poang, reverse=True)[:topp])
 
-with (JSON_MAPP / "total_franvaro.json").open("w", encoding="utf-8") as f:
-    json.dump(total_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
+samman_df["meritvarde"] = samman_df[BETYGSKOLUMNER].apply(meritvarde, axis=1)
 
-print(f"✔️ JSON-data sparad i '{JSON_MAPP}'")
+korrelation_merit = []
+for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
+    x, y = samman_df["meritvarde"], samman_df[kol]
+    if x.notna().sum() >= 2 and y.notna().sum() >= 2:
+        k = x.corr(y)
+        korrelation_merit.append({
+            "Typ": kol,
+            "Korrelation": round(k, 2),
+            "Styrka": tolka_korrelation(k)
+        })
 
+# === STEG 9 ===
+if korrelation_merit:
+    merit_df = pd.DataFrame(korrelation_merit)
+    with pd.ExcelWriter(RESULTAT_FIL, engine='openpyxl', mode='a') as writer:
+        merit_df.to_excel(writer, index=False, sheet_name="Meritvärde vs frånvaro")
+
+    wb = load_workbook(RESULTAT_FIL)
+    ws = wb["Meritvärde vs frånvaro"]
+    for rad in range(2, ws.max_row + 1):
+        cell = ws.cell(row=rad, column=2)
+        try:
+            value = float(cell.value)
+            fill = farg_gradient(value)
+            if fill:
+                cell.fill = fill
+        except:
+            continue
+    wb.save(RESULTAT_FIL)
+
+    for rad in korrelation_merit:
+        filnamn = "merit_" + ("ogiltig" if "ogiltig" in rad["Typ"] else "total") + "_franvaro.json"
+        with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
+            json.dump(rad, f, indent=2, ensure_ascii=False)
