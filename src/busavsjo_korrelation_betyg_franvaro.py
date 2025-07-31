@@ -1,6 +1,7 @@
 import pandas as pd
 import hashlib
 import os
+import json
 from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
 from config_paths import OUTPUT_DIR
@@ -12,6 +13,7 @@ FRANVARO_FLIK = "Rensad data"
 BETYG_FIL = os.path.join(DATA_MAPP, "betyg.xlsx")
 OUTPUT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_input.xlsx")
 RESULTAT_FIL = os.path.join(DATA_MAPP, "busavsjo_korrelation_resultat.xlsx")
+JSON_MAPP = os.path.join(DATA_MAPP, "json")
 
 IGNORERA_KOLUMNER = {
     "System", "Datum", "Version", "Skolenhetskod",
@@ -88,22 +90,30 @@ samman_df = pd.merge(betyg_df, franvaro_df, on="AnonymID")
 # === STEG 4 ===
 korrelationer = []
 print("\n📊 Korrelation mellan betyg och frånvaro:\n")
+
 for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
-    print(f"ᾞa Ämne: {betyg.replace('_num', '')}")
+    print(f"📘 Ämne: {betyg.replace('_num', '')}")
     for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
         if betyg in samman_df.columns and kol in samman_df.columns:
-            try:
-                corr = samman_df[betyg].corr(samman_df[kol])
-                tolkning = tolka_korrelation(corr)
-                print(f"  → Mot {kol}: {corr:.2f}\n     {tolkning}")
-                korrelationer.append({
-                    "Ämne": betyg.replace("_num", ""),
-                    "Frånvarotyp": kol,
-                    "Korrelation": round(corr, 2),
-                    "Styrka": tolkning
-                })
-            except Exception as e:
-                print(f"  → Mot {kol}: Fel: {e}")
+            serie_x = samman_df[betyg]
+            serie_y = samman_df[kol]
+
+            # Kontrollera att det finns tillräckligt med värden
+            if serie_x.notna().sum() >= 2 and serie_y.notna().sum() >= 2:
+                corr = serie_x.corr(serie_y)
+                if pd.notna(corr):
+                    tolkning = tolka_korrelation(corr)
+                    print(f"  → Mot {kol}: {corr:.2f}\n     {tolkning}")
+                    korrelationer.append({
+                        "Ämne": betyg.replace("_num", ""),
+                        "Frånvarotyp": kol,
+                        "Korrelation": round(corr, 2),
+                        "Styrka": tolkning
+                    })
+                else:
+                    print(f"  → Mot {kol}: otillräcklig data (NaN)")
+            else:
+                print(f"  → Mot {kol}: för få datapunkter (<2)")
     print("")
 
 # === STEG 5 ===
@@ -134,3 +144,25 @@ if korrelationer:
                 continue
     wb.save(RESULTAT_FIL)
     print(f"✔️ Färgkodad Excel-fil sparad till '{RESULTAT_FIL}'")
+
+ # === STEG 7 ===
+os.makedirs(JSON_MAPP, exist_ok=True)
+
+# Tvinga bort NaN och avrunda giltiga värden
+ogiltig_df_clean = ogiltig_df.copy()
+total_df_clean = total_df.copy()
+
+ogiltig_df_clean["Korrelation"] = ogiltig_df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
+total_df_clean["Korrelation"] = total_df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
+
+ogiltig_df_clean = ogiltig_df_clean.where(pd.notna(ogiltig_df_clean), None)
+total_df_clean = total_df_clean.where(pd.notna(total_df_clean), None)
+
+with open(os.path.join(JSON_MAPP, "ogiltig_franvaro.json"), "w", encoding="utf-8") as f:
+    json.dump(ogiltig_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
+
+with open(os.path.join(JSON_MAPP, "total_franvaro.json"), "w", encoding="utf-8") as f:
+    json.dump(total_df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
+
+print(f"✔️ JSON-data sparad i '{JSON_MAPP}'")
+
