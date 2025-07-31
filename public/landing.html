@@ -9,96 +9,142 @@
     :root {
       --primary: #1a237e;
       --accent: #0d47a1;
+      --bg: #f4f6f9;
     }
     * { box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
       margin: 0;
-      padding: 0;
-      line-height: 1.6;
-      background: #f9f9f9;
+      background: var(--bg);
       color: #333;
       display: flex;
-      min-height: 100vh;
       flex-direction: column;
+      min-height: 100vh;
     }
-    header, main {
+    header {
+      background: var(--primary);
+      color: white;
       padding: 2rem;
-      width: 100%;
-      max-width: 900px;
-      margin: auto;
+      text-align: center;
     }
     header h1 {
-      margin-top: 1rem;
+      margin: 0;
+      font-size: 2rem;
+    }
+    header p {
+      margin: 0.5rem 0 0;
+      font-weight: 300;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      max-width: 1200px;
+      margin: auto;
+      padding: 2rem;
+      gap: 2rem;
+    }
+    aside {
+      flex: 0 0 250px;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      height: fit-content;
+    }
+    aside h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
       color: var(--primary);
     }
-    .intro {
-      margin-bottom: 2rem;
-    }
-    .options {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
     .option {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       display: flex;
       align-items: center;
+      margin-bottom: 0.75rem;
     }
     .option input {
-      margin-right: 1rem;
+      margin-right: 0.5rem;
+    }
+    main {
+      flex: 1;
+    }
+    .welcome {
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
     button {
       background: var(--accent);
-      color: #fff;
+      color: white;
       border: none;
-      border-radius: 4px;
       padding: 0.75rem 1.5rem;
       font-size: 1rem;
+      border-radius: 5px;
       cursor: pointer;
-      align-self: flex-start;
-      text-transform: uppercase;
+      margin-top: 1rem;
     }
     button:hover {
       background: #1565c0;
     }
-    @media (max-width: 600px) {
-      header, main { padding: 1rem; }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+      background: #e8eaf6;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        padding: 1rem;
+      }
+      aside {
+        width: 100%;
+        margin-bottom: 1rem;
+      }
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Analys av frånvaro och betyg</h1>
-    <p class="intro">Utforska sambandet mellan elevers närvaro och deras skolresultat. Välj vilka korrelationer du vill se.</p>
+    <p>Välkommen! Utforska sambandet mellan närvaro och skolresultat.</p>
   </header>
-  <main>
-    <form id="correlationForm">
-      <div class="options">
+
+  <div class="container">
+    <aside>
+      <h2>Välj korrelationer</h2>
+      <form id="correlationForm">
         <label class="option">
-          <input type="checkbox" value="ogiltig">
-          Ogiltig frånvaro
+          <input type="checkbox" value="ogiltig"> Ogiltig frånvaro
         </label>
         <label class="option">
-          <input type="checkbox" value="total">
-          Total frånvaro
+          <input type="checkbox" value="total"> Total frånvaro
         </label>
         <label class="option">
-          <input type="checkbox" value="merit">
-          Meritvärde
+          <input type="checkbox" value="merit"> Meritvärde
         </label>
         <label class="option">
-          <input type="checkbox" value="amnesvis">
-          Ämnesvis korrelation
+          <input type="checkbox" value="amnesvis"> Ämnesvis korrelation
         </label>
+        <button type="submit">Se korrelationer</button>
+      </form>
+    </aside>
+
+    <main>
+      <div class="welcome">
+        <h2>Vad vill du undersöka?</h2>
+        <p>
+          Med denna visualiseringstjänst kan du analysera hur olika typer av frånvaro påverkar elevers betyg. Använd urvalet till vänster för att filtrera det du vill se i nästa steg.
+        </p>
       </div>
-      <button type="submit">Se korrelationer</button>
-    </form>
-  </main>
+    </main>
+  </div>
+
+  <footer>
+    © 2025 Sävsjö kommun – Barn och utbildning
+  </footer>
+
   <script>
     document.getElementById('correlationForm').addEventListener('submit', function(e) {
       e.preventDefault();
