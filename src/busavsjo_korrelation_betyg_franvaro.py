@@ -4,7 +4,7 @@ import hashlib
 import json
 from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
-from config_paths import OUTPUT_DIR
+from config_paths import OUTPUT_DIR, LASAR
 
 # === INSTÄLLNINGAR ===
 DATA_MAPP = OUTPUT_DIR
@@ -120,6 +120,7 @@ samman_df.to_excel(OUTPUT_FIL, index=False)
 # === STEG 6 ===
 if korrelationer:
     resultat_df = pd.DataFrame(korrelationer)
+    resultat_df["Läsår"] = LASAR
     ogiltig_df = resultat_df[resultat_df["Frånvarotyp"] == "ogiltig_frånvaro_pct"]
     total_df = resultat_df[resultat_df["Frånvarotyp"] == "total_frånvaro"]
 
@@ -147,6 +148,7 @@ JSON_MAPP.mkdir(parents=True, exist_ok=True)
 def spara_json(df, filnamn):
     df_clean = df.copy()
     df_clean["Korrelation"] = df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
+    df_clean["Läsår"] = LASAR
     df_clean = df_clean.where(pd.notna(df_clean), None)
     with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
         json.dump(df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
@@ -179,6 +181,7 @@ for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
 # === STEG 9 ===
 if korrelation_merit:
     merit_df = pd.DataFrame(korrelation_merit)
+    merit_df["Läsår"] = LASAR
     with pd.ExcelWriter(RESULTAT_FIL, engine='openpyxl', mode='a') as writer:
         merit_df.to_excel(writer, index=False, sheet_name="Meritvärde vs frånvaro")
 
@@ -196,6 +199,7 @@ if korrelation_merit:
     wb.save(RESULTAT_FIL)
 
     for rad in korrelation_merit:
+        rad["Läsår"] = LASAR
         filnamn = "merit_" + ("ogiltig" if "ogiltig" in rad["Typ"] else "total") + "_franvaro.json"
         with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
             json.dump(rad, f, indent=2, ensure_ascii=False)

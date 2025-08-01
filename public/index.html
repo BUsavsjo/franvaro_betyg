@@ -89,6 +89,10 @@
         <option value="total">Total frånvaro</option>
         <option value="merit">Meritvärde</option>
       </select>
+      <label for="lasar-select" style="margin-left:20px;">Läsår:</label>
+      <select id="lasar-select">
+        <option value="alla">Alla</option>
+      </select>
     </div>
 
     <div class="dashboard" id="dashboard"></div>
@@ -107,6 +111,12 @@
   </div>
 
   <script>
+    const LASAR = "2024/2025";
+    let dataOgiltig = [];
+    let dataTotal = [];
+    let dataMerit = [];
+    const lasarSet = new Set();
+
     function byggTabell(data, tabellId) {
       const table = document.getElementById(tabellId);
       table.innerHTML = "";
@@ -148,6 +158,28 @@
       sorted.forEach(row => tbody.appendChild(row));
     }
 
+    function filterByYear(data, year) {
+      return year === "alla" ? data : data.filter(r => r["Läsår"] === year);
+    }
+
+    function uppdateraTabeller() {
+      const year = document.getElementById("lasar-select").value;
+      byggTabell(filterByYear(dataOgiltig, year), "ogiltig");
+      byggTabell(filterByYear(dataTotal, year), "total");
+      byggTabell(filterByYear(dataMerit, year), "merit");
+    }
+
+    function uppdateraLasarDropdown() {
+      const select = document.getElementById("lasar-select");
+      select.innerHTML = "<option value=\"alla\">Alla</option>";
+      Array.from(lasarSet).sort().forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        select.appendChild(opt);
+      });
+    }
+
     function läggTillKort(titel, värde, klass = "") {
       const card = document.createElement("div");
       card.className = `card ${klass}`;
@@ -166,30 +198,40 @@
     }
 
     document.getElementById("filter").addEventListener("change", e => visaTabell(e.target.value));
+    document.getElementById("lasar-select").addEventListener("change", uppdateraTabeller);
     visaTabell("alla");
 
 
-    fetch("json/ogiltig_franvaro.json")
+    fetch(`json/${LASAR}/ogiltig_franvaro.json`)
       .then(r => r.json())
       .then(data => {
-        byggTabell(data, "ogiltig");
+        dataOgiltig = data;
+        data.forEach(r => lasarSet.add(r["Läsår"]));
+        uppdateraLasarDropdown();
+        uppdateraTabeller();
         const medel = data.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / data.length;
         läggTillKort("Medel korrelation – Ogiltig", medel.toFixed(2));
       });
 
-    fetch("json/total_franvaro.json")
+    fetch(`json/${LASAR}/total_franvaro.json`)
       .then(r => r.json())
       .then(data => {
-        byggTabell(data, "total");
+        dataTotal = data;
+        data.forEach(r => lasarSet.add(r["Läsår"]));
+        uppdateraLasarDropdown();
+        uppdateraTabeller();
         const medel = data.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / data.length;
         läggTillKort("Medel korrelation – Total", medel.toFixed(2));
       });
 
     Promise.all([
-      fetch("json/merit_ogiltig_franvaro.json").then(r => r.json()),
-      fetch("json/merit_total_franvaro.json").then(r => r.json())
+      fetch(`json/${LASAR}/merit_ogiltig_franvaro.json`).then(r => r.json()),
+      fetch(`json/${LASAR}/merit_total_franvaro.json`).then(r => r.json())
     ]).then(([ogiltig, total]) => {
-      byggTabell([ogiltig, total], "merit");
+      dataMerit = [ogiltig, total];
+      [ogiltig, total].forEach(r => lasarSet.add(r["Läsår"]));
+      uppdateraLasarDropdown();
+      uppdateraTabeller();
       const snitt = (parseFloat(ogiltig.Korrelation || 0) + parseFloat(total.Korrelation || 0)) / 2;
       läggTillKort("Medel korrelation – Meritvärde", snitt.toFixed(2));
     });

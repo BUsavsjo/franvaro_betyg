@@ -1,11 +1,12 @@
 import xlrd
 import xlwt
-from config_paths import RAW_FRANVARO_DIR, OUTPUT_DIR
+from config_paths import RAW_FRANVARO_DIR, OUTPUT_DIR, LASAR
 
 
 def busavsjo_samla_franvarorapporter():
     """
-    Slår ihop alla .xls-filer i ``data/raw/franvaro`` till en fil (``data/output/franvaro.xls``),
+    Slår ihop alla .xls-filer i ``data/raw/franvaro/<läsår>`` till en fil
+    (``data/output/<läsår>/franvaro.xls``),
     behåller bara rubriken från första filen och hoppar över de fyra första raderna i resten.
     """
     indata_mapp = RAW_FRANVARO_DIR

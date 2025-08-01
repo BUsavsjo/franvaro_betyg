@@ -1,8 +1,8 @@
-from config_paths import RAW_BETYG_DIR, OUTPUT_DIR
+from config_paths import RAW_BETYG_DIR, OUTPUT_DIR, LASAR
 
 def busavsjo_samla_txtfiler():
-    """Läser in alla .txt-filer i ``data/raw/betyg`` och
-    sparar ihop dem till ``data/output/betyg.txt``"""
+    """Läser in alla .txt-filer för läsåret i ``data/raw/betyg/<läsår>`` och
+    sparar ihop dem till ``data/output/<läsår>/betyg.txt``"""
     indata_mapp = RAW_BETYG_DIR
     utdata_fil = OUTPUT_DIR / "betyg.txt"
     med_antal = 0
