@@ -3,7 +3,7 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Alignment, Font, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 import re
-from config_paths import OUTPUT_DIR
+from config_paths import OUTPUT_DIR, LASAR
 DATA_MAPP = OUTPUT_DIR
 FIL_IN = DATA_MAPP / "franvaro.xls"
 FIL_UT = DATA_MAPP / "franvaro_rensad_kategoriserad.xlsx"

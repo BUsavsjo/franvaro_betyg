@@ -1,5 +1,5 @@
 import openpyxl
-from config_paths import OUTPUT_DIR
+from config_paths import OUTPUT_DIR, LASAR
 
 # Definiera rubrikerna
 headers = [
