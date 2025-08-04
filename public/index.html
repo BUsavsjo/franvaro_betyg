@@ -255,10 +255,18 @@ async function läsJsonData() {
     const snittMerit = dataMerit.length
       ? dataMerit.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataMerit.length
       : 0;
+    const snittMeritAk6 = jsondata[4].length
+      ? jsondata[4].reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / jsondata[4].length
+      : 0;
+    const snittMeritAk9 = jsondata[5].length
+      ? jsondata[5].reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / jsondata[5].length
+      : 0;
 
     läggTillKort("Medel korrelation – Ogiltig", dataOgiltig.length ? snittOgiltig.toFixed(2) : "N/A");
     läggTillKort("Medel korrelation – Total", dataTotal.length ? snittTotal.toFixed(2) : "N/A");
     läggTillKort("Medel korrelation – Meritvärde", dataMerit.length ? snittMerit.toFixed(2) : "N/A");
+    läggTillKort("Åk 6 – Meritvärde", jsondata[4].length ? snittMeritAk6.toFixed(2) : "N/A");
+    läggTillKort("Åk 9 – Meritvärde", jsondata[5].length ? snittMeritAk9.toFixed(2) : "N/A");
   } catch (error) {
     console.error("Fel vid läsning av JSON-data:", error);
     läggTillKort("Fel", "Kunde inte ladda data", "negativ");
