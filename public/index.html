@@ -165,7 +165,11 @@ function sorteraKolumn(tabellId, kolumnIndex) {
 }
 
 function filterData(data, year, arskurs) {
-  return data.filter(r => (year === "alla" || r["Läsår"] === year) && (arskurs === "alla" || r["Årskurs"] === arskurs));
+  return data.filter(
+    r =>
+      (year === "alla" || r["Läsår"] === year) &&
+      (arskurs === "alla" || String(r["Årskurs"]) === arskurs)
+  );
 }
 
 function uppdateraTabeller() {
@@ -210,7 +214,9 @@ async function läsJsonData() {
     "ogiltig_franvaro_pct_ak6.json",
     "ogiltig_franvaro_pct_ak9.json",
     "total_franvaro_pct_ak6.json",
-    "total_franvaro_pct_ak9.json"
+    "total_franvaro_pct_ak9.json",
+    "meritvarde_ak6.json",
+    "meritvarde_ak9.json"
   ];
   try {
     const jsondata = await Promise.all(
@@ -234,17 +240,25 @@ async function läsJsonData() {
     );
     dataOgiltig = jsondata[0].concat(jsondata[1]);
     dataTotal = jsondata[2].concat(jsondata[3]);
-    dataMerit = []; // Lägg till om meritdata finns
+    dataMerit = jsondata[4].concat(jsondata[5]);
 
-    [...dataOgiltig, ...dataTotal].forEach(r => lasarSet.add(r["Läsår"]));
+    [...dataOgiltig, ...dataTotal, ...dataMerit].forEach(r => lasarSet.add(r["Läsår"]));
     uppdateraLasarDropdown();
     uppdateraTabeller();
 
-    const snittOgiltig = dataOgiltig.length ? dataOgiltig.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataOgiltig.length : 0;
-    const snittTotal = dataTotal.length ? dataTotal.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataTotal.length : 0;
+    const snittOgiltig = dataOgiltig.length
+      ? dataOgiltig.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataOgiltig.length
+      : 0;
+    const snittTotal = dataTotal.length
+      ? dataTotal.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataTotal.length
+      : 0;
+    const snittMerit = dataMerit.length
+      ? dataMerit.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataMerit.length
+      : 0;
 
     läggTillKort("Medel korrelation – Ogiltig", dataOgiltig.length ? snittOgiltig.toFixed(2) : "N/A");
     läggTillKort("Medel korrelation – Total", dataTotal.length ? snittTotal.toFixed(2) : "N/A");
+    läggTillKort("Medel korrelation – Meritvärde", dataMerit.length ? snittMerit.toFixed(2) : "N/A");
   } catch (error) {
     console.error("Fel vid läsning av JSON-data:", error);
     läggTillKort("Fel", "Kunde inte ladda data", "negativ");
