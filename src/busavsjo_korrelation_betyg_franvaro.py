@@ -35,16 +35,14 @@ def spara_json(df, filnamn, årskurs):
     df_clean["Årskurs"] = årskurs
 
     with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
-        json.dump(
-            df_clean.to_dict(orient="records"),
-            f,
-            indent=2,
-            ensure_ascii=False,
-            default=lambda x: float(x)
-            if isinstance(x, (np.floating, np.integer))
-            else x,
-            allow_nan=False,
-        )
+    json.dump(
+        df_clean.to_dict(orient="records"),
+        f,
+        indent=2,
+        ensure_ascii=False,
+        default=lambda x: float(x) if isinstance(x, (np.floating, np.integer)) and not pd.isna(x) else None,
+        allow_nan=False,
+    )
 
 def analysera_korrelation(klass_varde, betyg_df):
     ämnen_ak6 = ["BI", "En", "Hkk", "idh", "Ma", "mu", "No", "So", "Sv", "Sva", "Tk"]
