@@ -9,3 +9,4 @@ RAW_DIR = BASE_DIR / "data" / "raw"
 RAW_BETYG_DIR = RAW_DIR / "betyg" / LASAR
 RAW_FRANVARO_DIR = RAW_DIR / "franvaro" / LASAR
 OUTPUT_DIR = BASE_DIR / "data" / "output" / LASAR
+CONFIG_DIR = BASE_DIR / "config"
