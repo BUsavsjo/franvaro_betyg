@@ -15,25 +15,6 @@ FRANVAROTYPER = {
     "ogiltig_franvaro_pct": "Ogiltig frånvaro (%)",
     "total_franvaro_pct": "Total frånvaro (%)"
 }
-
-def spara_json(df, filnamn, årskurs):
-    (JSON_MAPP).mkdir(parents=True, exist_ok=True)
-    df_clean = df.copy()
-
-    # Runda korrelationer endast om de är giltiga
-    df_clean["Korrelation"] = df_clean["Korrelation"].apply(
-        lambda x: round(float(x), 2)
-        if isinstance(x, (int, float, np.floating)) and not np.isnan(x)
-        else None
-    )
-
-    # Ersätt eventuella kvarvarande NaN med None
-    df_clean = df_clean.astype(object).where(pd.notna(df_clean), None)
-
-    # Lägg till metadata
-    df_clean["Läsår"] = LASAR
-    df_clean["Årskurs"] = årskurs
-
 def spara_json(df, filnamn, årskurs):
     (JSON_MAPP).mkdir(parents=True, exist_ok=True)
     df_clean = df.copy()
@@ -109,6 +90,35 @@ def analysera_korrelation(klass_varde, betyg_df):
         filnamn = f"{franvarotyp}_ak{klass_varde}.json".replace("å", "a").replace("ä", "a").replace("ö", "o")
         spara_json(df_resultat, filnamn, årskurs=klass_varde)
         print(f"📄 Sparade {filnamn} med {len(df_resultat)} rader.")
+    # Korrelation mellan meritvärde och frånvaro
+    merit_resultat = []
+    for franvarotyp in FRANVAROTYPER.keys():
+        delmängd = df[["Meritvärde", franvarotyp]].dropna()
+        if (
+            not delmängd.empty
+            and delmängd[franvarotyp].nunique() > 1
+            and delmängd["Meritvärde"].nunique() > 1
+        ):
+            korrelation = delmängd["Meritvärde"].corr(delmängd[franvarotyp])
+            if pd.isna(korrelation):
+                korrelation = None
+        else:
+            korrelation = None
+
+        styrka = styrkebedömning(korrelation)
+        merit_resultat.append(
+            {
+                "Ämne": "Meritvärde",
+                "Frånvarotyp": franvarotyp,
+                "Korrelation": korrelation,
+                "Styrka": styrka,
+            }
+        )
+
+    df_merit = pd.DataFrame(merit_resultat)
+    filnamn_merit = f"meritvarde_ak{klass_varde}.json"
+    spara_json(df_merit, filnamn_merit, årskurs=klass_varde)
+    print(f"📄 Sparade {filnamn_merit} med {len(df_merit)} rader.")
 
 def styrkebedömning(k):
     if k is None:
