@@ -1,0 +1,146 @@
+[
+  {
+    "Ämne": "BI",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.51,
+    "Styrka": "stark",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "En",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.25,
+    "Styrka": "svag",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Hkk",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.45,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "idh",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.51,
+    "Styrka": "stark",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Ma",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.27,
+    "Styrka": "svag",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "mu",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.38,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Bi",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.39,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Fy",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.38,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Ke",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.37,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Ge",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.45,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Hi",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.43,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Re",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.45,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Sh",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.44,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "SI",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.53,
+    "Styrka": "stark",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Sv",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.21,
+    "Styrka": "svag",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Sva",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.13,
+    "Styrka": "svag",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Tn",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": NaN,
+    "Styrka": "saknas",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  },
+  {
+    "Ämne": "Tk",
+    "Frånvarotyp": "ogiltig_franvaro_pct",
+    "Korrelation": -0.49,
+    "Styrka": "måttlig",
+    "Läsår": "2024-2025",
+    "Årskurs": "9"
+  }
+]

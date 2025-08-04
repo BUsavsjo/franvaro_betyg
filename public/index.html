@@ -89,152 +89,149 @@
         <option value="total">Total frånvaro</option>
         <option value="merit">Meritvärde</option>
       </select>
+
       <label for="lasar-select" style="margin-left:20px;">Läsår:</label>
       <select id="lasar-select">
         <option value="alla">Alla</option>
       </select>
+
+      <label for="arskurs-select" style="margin-left:20px;">Årskurs:</label>
+      <select id="arskurs-select">
+        <option value="alla">Alla</option>
+        <option value="6">Åk 6</option>
+        <option value="9">Åk 9</option>
+      </select>
     </div>
 
     <div class="dashboard" id="dashboard"></div>
+
     <div id="ogiltig-section" class="tabell-section">
-    <h2>Ogiltig frånvaro</h2>
-    <table id="ogiltig"></table>
+      <h2>Ogiltig frånvaro</h2>
+      <table id="ogiltig"></table>
     </div>
     <div id="total-section" class="tabell-section">
-    <h2>Total frånvaro</h2>
-    <table id="total"></table>
+      <h2>Total frånvaro</h2>
+      <table id="total"></table>
     </div>
     <div id="merit-section" class="tabell-section">
-    <h2>Meritvärde</h2>
-    <table id="merit"></table>
+      <h2>Meritvärde</h2>
+      <table id="merit"></table>
     </div>
   </div>
 
-  <script>
-    const LASAR = "2024-2025";
-    let dataOgiltig = [];
-    let dataTotal = [];
-    let dataMerit = [];
-    const lasarSet = new Set();
+<script>
+const LASAR = "2024-2025";
+const JSON_PATH = `json/${LASAR}`;
+let dataOgiltig = [], dataTotal = [], dataMerit = [];
+const lasarSet = new Set();
 
-    function byggTabell(data, tabellId) {
-      const table = document.getElementById(tabellId);
-      table.innerHTML = "";
-      const header = Object.keys(data[0]);
-      const thead = table.createTHead();
-      const row = thead.insertRow();
-      header.forEach((key, i) => {
-        const cell = row.insertCell();
-        cell.outerHTML = `<th onclick="sorteraKolumn('${tabellId}', ${i})">${key}</th>`;
-      });
-
-      const tbody = table.createTBody();
-      data.forEach(rowData => {
-        const row = tbody.insertRow();
-        header.forEach(key => {
-          const cell = row.insertCell();
-          cell.textContent = rowData[key];
-          if (key === "Korrelation") {
-            const v = parseFloat(rowData[key]);
-            if (v > 0.2) cell.classList.add("positiv");
-            if (v < -0.2) cell.classList.add("negativ");
-          }
-        });
-      });
-    }
-
-    function sorteraKolumn(tabellId, kolumnIndex) {
-      const table = document.getElementById(tabellId);
-      const tbody = table.tBodies[0];
-      const rows = Array.from(tbody.rows);
-      const isNum = !isNaN(parseFloat(rows[0].cells[kolumnIndex].textContent));
-
-      const sorted = rows.sort((a, b) => {
-        const valA = a.cells[kolumnIndex].textContent;
-        const valB = b.cells[kolumnIndex].textContent;
-        return isNum ? valB - valA : valA.localeCompare(valB);
-      });
-
-      sorted.forEach(row => tbody.appendChild(row));
-    }
-
-    function filterByYear(data, year) {
-      return year === "alla" ? data : data.filter(r => r["Läsår"] === year);
-    }
-
-    function uppdateraTabeller() {
-      const year = document.getElementById("lasar-select").value;
-      byggTabell(filterByYear(dataOgiltig, year), "ogiltig");
-      byggTabell(filterByYear(dataTotal, year), "total");
-      byggTabell(filterByYear(dataMerit, year), "merit");
-    }
-
-    function uppdateraLasarDropdown() {
-      const select = document.getElementById("lasar-select");
-      select.innerHTML = "<option value=\"alla\">Alla</option>";
-      Array.from(lasarSet).sort().forEach(y => {
-        const opt = document.createElement("option");
-        opt.value = y;
-        opt.textContent = y;
-        select.appendChild(opt);
-      });
-    }
-
-    function läggTillKort(titel, värde, klass = "") {
-      const card = document.createElement("div");
-      card.className = `card ${klass}`;
-      card.innerHTML = `<h3>${titel}</h3><p>${värde}</p>`;
-      document.getElementById("dashboard").appendChild(card);
-    }
-    function visaTabell(varde) {
-      ["ogiltig","total","merit"].forEach(id => {
-        const sektion = document.getElementById(`${id}-section`);
-        if (varde === "alla" || varde === id) {
-          sektion.style.display = "";
-        } else {
-          sektion.style.display = "none";
-        }
-      });
-    }
-
-    document.getElementById("filter").addEventListener("change", e => visaTabell(e.target.value));
-    document.getElementById("lasar-select").addEventListener("change", uppdateraTabeller);
-    visaTabell("alla");
-
-
-    fetch(`json/${LASAR}/ogiltig_franvaro.json`)
-      .then(r => r.json())
-      .then(data => {
-        dataOgiltig = data;
-        data.forEach(r => lasarSet.add(r["Läsår"]));
-        uppdateraLasarDropdown();
-        uppdateraTabeller();
-        const medel = data.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / data.length;
-        läggTillKort("Medel korrelation – Ogiltig", medel.toFixed(2));
-      });
-
-    fetch(`json/${LASAR}/total_franvaro.json`)
-      .then(r => r.json())
-      .then(data => {
-        dataTotal = data;
-        data.forEach(r => lasarSet.add(r["Läsår"]));
-        uppdateraLasarDropdown();
-        uppdateraTabeller();
-        const medel = data.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / data.length;
-        läggTillKort("Medel korrelation – Total", medel.toFixed(2));
-      });
-
-    Promise.all([
-      fetch(`json/${LASAR}/merit_ogiltig_franvaro.json`).then(r => r.json()),
-      fetch(`json/${LASAR}/merit_total_franvaro.json`).then(r => r.json())
-    ]).then(([ogiltig, total]) => {
-      dataMerit = [ogiltig, total];
-      [ogiltig, total].forEach(r => lasarSet.add(r["Läsår"]));
-      uppdateraLasarDropdown();
-      uppdateraTabeller();
-      const snitt = (parseFloat(ogiltig.Korrelation || 0) + parseFloat(total.Korrelation || 0)) / 2;
-      läggTillKort("Medel korrelation – Meritvärde", snitt.toFixed(2));
+function byggTabell(data, tabellId) {
+  const table = document.getElementById(tabellId);
+  table.innerHTML = "";
+  if (!data.length) return;
+  const header = Object.keys(data[0]);
+  const thead = table.createTHead();
+  const row = thead.insertRow();
+  header.forEach((key, i) => {
+    const cell = row.insertCell();
+    cell.outerHTML = `<th onclick="sorteraKolumn('${tabellId}', ${i})">${key}</th>`;
+  });
+  const tbody = table.createTBody();
+  data.forEach(rowData => {
+    const row = tbody.insertRow();
+    header.forEach(key => {
+      const cell = row.insertCell();
+      cell.textContent = rowData[key];
+      if (key === "Korrelation") {
+        const v = parseFloat(rowData[key]);
+        if (v > 0.2) cell.classList.add("positiv");
+        if (v < -0.2) cell.classList.add("negativ");
+      }
     });
-  </script>
+  });
+}
+
+function sorteraKolumn(tabellId, kolumnIndex) {
+  const table = document.getElementById(tabellId);
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows);
+  const isNum = !isNaN(parseFloat(rows[0].cells[kolumnIndex].textContent));
+  const sorted = rows.sort((a, b) => {
+    const valA = a.cells[kolumnIndex].textContent;
+    const valB = b.cells[kolumnIndex].textContent;
+    return isNum ? valB - valA : valA.localeCompare(valB);
+  });
+  sorted.forEach(row => tbody.appendChild(row));
+}
+
+function filterData(data, year, arskurs) {
+  return data.filter(r => (year === "alla" || r["Läsår"] === year) && (arskurs === "alla" || r["Årskurs"] === arskurs));
+}
+
+function uppdateraTabeller() {
+  const year = document.getElementById("lasar-select").value;
+  const arskurs = document.getElementById("arskurs-select").value;
+  byggTabell(filterData(dataOgiltig, year, arskurs), "ogiltig");
+  byggTabell(filterData(dataTotal, year, arskurs), "total");
+  byggTabell(filterData(dataMerit, year, arskurs), "merit");
+}
+
+function uppdateraLasarDropdown() {
+  const select = document.getElementById("lasar-select");
+  select.innerHTML = "<option value=\"alla\">Alla</option>";
+  Array.from(lasarSet).sort().forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    select.appendChild(opt);
+  });
+}
+
+function läggTillKort(titel, värde, klass = "") {
+  const card = document.createElement("div");
+  card.className = `card ${klass}`;
+  card.innerHTML = `<h3>${titel}</h3><p>${värde}</p>`;
+  document.getElementById("dashboard").appendChild(card);
+}
+
+function visaTabell(varde) {
+  ["ogiltig","total","merit"].forEach(id => {
+    const sektion = document.getElementById(`${id}-section`);
+    sektion.style.display = (varde === "alla" || varde === id) ? "" : "none";
+  });
+}
+
+document.getElementById("filter").addEventListener("change", e => visaTabell(e.target.value));
+document.getElementById("lasar-select").addEventListener("change", uppdateraTabeller);
+document.getElementById("arskurs-select").addEventListener("change", uppdateraTabeller);
+
+async function läsJsonData() {
+  const filer = [
+    "ogiltig_franvaro_pct_ak6.json",
+    "ogiltig_franvaro_pct_ak9.json",
+    "total_franvaro_pct_ak6.json",
+    "total_franvaro_pct_ak9.json"
+  ];
+  const jsondata = await Promise.all(
+    filer.map(fil => fetch(`${JSON_PATH}/${fil}`).then(r => r.json()))
+  );
+  dataOgiltig = jsondata[0].concat(jsondata[1]);
+  dataTotal = jsondata[2].concat(jsondata[3]);
+  dataMerit = []; // Lägg till om meritdata finns
+
+  [...dataOgiltig, ...dataTotal].forEach(r => lasarSet.add(r["Läsår"]));
+  uppdateraLasarDropdown();
+  uppdateraTabeller();
+
+  const snittOgiltig = dataOgiltig.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataOgiltig.length;
+  const snittTotal = dataTotal.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataTotal.length;
+
+  läggTillKort("Medel korrelation – Ogiltig", snittOgiltig.toFixed(2));
+  läggTillKort("Medel korrelation – Total", snittTotal.toFixed(2));
+}
+
+visaTabell("alla");
+läsJsonData();
+</script>
 </body>
 </html>
