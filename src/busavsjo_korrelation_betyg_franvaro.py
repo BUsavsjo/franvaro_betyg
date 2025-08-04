@@ -21,14 +21,14 @@ def spara_json(df, filnamn, årskurs):
     df_clean = df.copy()
 
     # Runda korrelationer endast om de är giltiga
-   df_clean["Korrelation"] = df_clean["Korrelation"].apply(
-    lambda x: round(float(x), 2) if isinstance(x, (int, float, np.floating)) and not np.isnan(x) else None
-)
-
+    df_clean["Korrelation"] = df_clean["Korrelation"].apply(
+        lambda x: round(float(x), 2)
+        if isinstance(x, (int, float, np.floating)) and not np.isnan(x)
+        else None
     )
 
     # Ersätt eventuella kvarvarande NaN med None
-    df_clean = df_clean.applymap(lambda x: None if pd.isna(x) else x)
+    df_clean = df_clean.astype(object).where(pd.notna(df_clean), None)
 
     # Lägg till metadata
     df_clean["Läsår"] = LASAR
@@ -40,7 +40,10 @@ def spara_json(df, filnamn, årskurs):
             f,
             indent=2,
             ensure_ascii=False,
-            default=lambda x: None  # Hantera t.ex. np.float32 och NaN
+            default=lambda x: float(x)
+            if isinstance(x, (np.floating, np.integer))
+            else x,
+            allow_nan=False,
         )
 
 def analysera_korrelation(klass_varde, betyg_df):
