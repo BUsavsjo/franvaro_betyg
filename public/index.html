@@ -216,7 +216,8 @@ async function läsJsonData() {
     "total_franvaro_pct_ak6.json",
     "total_franvaro_pct_ak9.json",
     "meritvarde_ak6.json",
-    "meritvarde_ak9.json"
+    "meritvarde_ak9.json",
+    "medel_meritvarde.json"
   ];
   try {
     const jsondata = await Promise.all(
@@ -241,6 +242,7 @@ async function läsJsonData() {
     dataOgiltig = jsondata[0].concat(jsondata[1]);
     dataTotal = jsondata[2].concat(jsondata[3]);
     dataMerit = jsondata[4].concat(jsondata[5]);
+    const medelMerit = jsondata[6] || [];
 
     [...dataOgiltig, ...dataTotal, ...dataMerit].forEach(r => lasarSet.add(r["Läsår"]));
     uppdateraLasarDropdown();
@@ -255,18 +257,13 @@ async function läsJsonData() {
     const snittMerit = dataMerit.length
       ? dataMerit.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataMerit.length
       : 0;
-    const snittMeritAk6 = jsondata[4].length
-      ? jsondata[4].reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / jsondata[4].length
-      : 0;
-    const snittMeritAk9 = jsondata[5].length
-      ? jsondata[5].reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / jsondata[5].length
-      : 0;
-
     läggTillKort("Medel korrelation – Ogiltig", dataOgiltig.length ? snittOgiltig.toFixed(2) : "N/A");
     läggTillKort("Medel korrelation – Total", dataTotal.length ? snittTotal.toFixed(2) : "N/A");
     läggTillKort("Medel korrelation – Meritvärde", dataMerit.length ? snittMerit.toFixed(2) : "N/A");
-    läggTillKort("Åk 6 – Meritvärde", jsondata[4].length ? snittMeritAk6.toFixed(2) : "N/A");
-    läggTillKort("Åk 9 – Meritvärde", jsondata[5].length ? snittMeritAk9.toFixed(2) : "N/A");
+    medelMerit.forEach(r => {
+      const titel = `Åk ${r["Årskurs"]} – Medel meritvärde`;
+      läggTillKort(titel, r["MedelMeritvärde"].toFixed(2));
+    });
   } catch (error) {
     console.error("Fel vid läsning av JSON-data:", error);
     läggTillKort("Fel", "Kunde inte ladda data", "negativ");
