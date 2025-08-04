@@ -24,6 +24,13 @@ De JSON-filer som genereras för webbgränssnittet hamnar i
 `data/output/<läsår>/json/`. Kopiera dem vid behov till motsvarande mapp under
 `public/json/<läsår>` för att exponera dem via webbplatsen.
 
+### Konfiguration av ämnesnamn
+
+För att kunna visa mer lättförståeliga namn för skolämnen i
+resultat- och JSON-filer finns filen `config/subject_names.json`. Här kan
+varje ämneskolumn från betygsfilen kopplas till ett visningsnamn.
+Om en kolumn saknas i filen används kolumnens originalnamn.
+
 Kör hela flödet med:
 
 ```bash

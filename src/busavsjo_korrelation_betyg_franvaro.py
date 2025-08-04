@@ -4,7 +4,7 @@ import hashlib
 import json
 from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
-from config_paths import OUTPUT_DIR, LASAR
+from config_paths import OUTPUT_DIR, LASAR, CONFIG_DIR
 
 # === INSTÄLLNINGAR ===
 DATA_MAPP = OUTPUT_DIR
@@ -14,6 +14,13 @@ BETYG_FIL = DATA_MAPP / "betyg.xlsx"
 OUTPUT_FIL = DATA_MAPP / "busavsjo_korrelation_input.xlsx"
 RESULTAT_FIL = DATA_MAPP / "busavsjo_korrelation_resultat.xlsx"
 JSON_MAPP = DATA_MAPP / "json"
+
+AMNEN_KONFIG = CONFIG_DIR / "subject_names.json"
+try:
+    with AMNEN_KONFIG.open("r", encoding="utf-8") as f:
+        AMNEN_DISPLAY = json.load(f)
+except FileNotFoundError:
+    AMNEN_DISPLAY = {}
 
 IGNORERA_KOLUMNER = {
     "System", "Datum", "Version", "Skolenhetskod",
@@ -108,8 +115,10 @@ for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
             if x.notna().sum() >= 2 and y.notna().sum() >= 2:
                 corr = x.corr(y)
                 if pd.notna(corr):
+                    amne_kod = betyg.replace("_num", "")
+                    visningsnamn = AMNEN_DISPLAY.get(amne_kod, amne_kod)
                     korrelationer.append({
-                        "Ämne": betyg.replace("_num", ""),
+                        "Ämne": visningsnamn,
                         "Frånvarotyp": kol,
                         "Korrelation": round(corr, 2),
                         "Styrka": tolka_korrelation(corr)
