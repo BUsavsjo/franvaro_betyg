@@ -165,6 +165,15 @@
       background-color: #e8f5e9;
     }
 
+    .info-box {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+
     @media (max-width: 600px) {
       .filter-bar {
         flex-direction: column;
@@ -228,6 +237,24 @@
         <table id="merit"></table>
       </div>
     </div>
+
+    <div class="info-box">
+      <p>Denna sida visar hur starkt elevers frånvaro hänger ihop med deras betyg. Siffrorna visar ett så kallat <strong>korrelationsvärde</strong>, som kan ligga mellan <strong>-1</strong> och <strong>1</strong>.</p>
+
+<p><strong>📉 Negativ korrelation:</strong> Om värdet är nära <strong>-1</strong>, betyder det att mycket frånvaro ofta leder till lägre betyg.</p>
+
+<p><em>Exempel:</em> Om korrelationen i matematik är <strong>-0,82</strong>, betyder det att elever som är borta mycket ofta har låga mattebetyg.</p>
+
+<p><strong>📈 Positiv korrelation:</strong> Om värdet är nära <strong>+1</strong>, betyder det att mer frånvaro hänger ihop med högre betyg – vilket kan förekomma i vissa fall men är ovanligt.</p>
+
+<p><em>Exempel:</em> Om korrelationen i musik är <strong>+0,25</strong>, kan det tyda på att elever med mer frånvaro ändå får goda betyg – men sambandet är svagt.</p>
+
+<p><strong>⚖️ Inget tydligt samband:</strong> Om värdet är nära <strong>0</strong>, finns inget tydligt samband mellan frånvaro och betyg i det ämnet.</p>
+
+<p><em>Exempel:</em> Ett värde på <strong>-0,05</strong> i samhällskunskap betyder att frånvaron inte verkar påverka betygen nämnvärt.</p>
+
+    </div>
+
   </div>
 
   <script>
