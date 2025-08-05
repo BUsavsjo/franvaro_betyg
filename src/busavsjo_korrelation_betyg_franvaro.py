@@ -16,6 +16,7 @@ FRANVAROTYPER = {
     "total_franvaro_pct": "Total frånvaro (%)"
 }
 
+
 def spara_json(df, filnamn, årskurs):
     (JSON_MAPP).mkdir(parents=True, exist_ok=True)
     df_clean = df.copy()
@@ -39,6 +40,7 @@ def spara_json(df, filnamn, årskurs):
             default=lambda x: float(x) if isinstance(x, (np.floating, np.integer)) and not pd.isna(x) else None,
             allow_nan=False,
         )
+
 
 def analysera_korrelation(klass_varde, betyg_df):
     ämnen_ak6 = ["BI", "En", "Hkk", "idh", "Ma", "mu", "No", "So", "Sv", "Sva", "Tk"]
@@ -116,6 +118,7 @@ def analysera_korrelation(klass_varde, betyg_df):
     spara_json(df_merit, filnamn_merit, årskurs=klass_varde)
     print(f"📄 Sparade {filnamn_merit} med {len(df_merit)} rader.")
 
+
 def styrkebedömning(k):
     if k is None:
         return "saknas"
@@ -131,12 +134,16 @@ def styrkebedömning(k):
     else:
         return "mycket stark"
 
+
 def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
     betygsskala = {"A": 20, "B": 17.5, "C": 15, "D": 12.5, "E": 10, "F": 0}
     språkvalskolumner = ["M1(betyg)", "M2(betyg)"]
     icke_betygskolumner = ["PersonNr", "Namn", "Klass"] + språkvalskolumner
 
-    betygskolumner = [col for col in df.columns if col not in icke_betygskolumner and df[col].isin(betygsskala.keys()).any()]
+    betygskolumner = [
+        col for col in df.columns
+        if col not in icke_betygskolumner and df[col].isin(betygsskala.keys()).any()
+    ]
 
     ogiltiga_koder = {"2", "3", "9", "Z", "Y"}
 
@@ -162,9 +169,37 @@ def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
         meritvärden.append(poäng_summa)
 
     df["Meritvärde"] = meritvärden
+
+    if årskurs == "9":
+        godkända_koder = {"A", "B", "C", "D", "E"}
+        gy_meritvärden = []
+        for idx, rad in df.iterrows():
+            sv = str(rad.get("Sv", "")).strip()
+            sva = str(rad.get("Sva", "")).strip()
+            en = str(rad.get("En", "")).strip()
+            ma = str(rad.get("Ma", "")).strip()
+
+            sv_sva_godkänd = sv in godkända_koder or sva in godkända_koder
+            en_godkänd = en in godkända_koder
+            ma_godkänd = ma in godkända_koder
+
+            antal_godkända = 0
+            for ämne in betygskolumner:
+                betyg = str(rad.get(ämne)).strip()
+                if betyg in godkända_koder:
+                    antal_godkända += 1
+
+            if sv_sva_godkänd and en_godkänd and ma_godkänd and antal_godkända >= 8:
+                gy_meritvärden.append(meritvärden[idx])
+            else:
+                gy_meritvärden.append(None)
+
+        df["MeritvardeGY"] = gy_meritvärden
+
     ny_fil = ursprungsfil.parent / ursprungsfil.name.replace(".xlsx", "_med_merit.xlsx")
     df.to_excel(ny_fil, index=False)
-    print(f"💾 Sparade {ny_fil.name} med kolumnen 'Meritvärde'.")
+    print(f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde' och 'MeritvardeGY'.")
+
 
 if __name__ == "__main__":
     for årskurs, betygfil in BETYGSFILER.items():

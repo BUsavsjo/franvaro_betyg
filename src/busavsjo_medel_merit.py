@@ -11,7 +11,7 @@ def busavsjo_les_excel_med_merit(fil: Path, arskurs: int) -> dict | None:
 
     df = pd.read_excel(fil)
 
-    kolumnnamn = "Meritvärde"
+    kolumnnamn = "MeritvardeGY" if arskurs == 9 else "Meritvärde"
     if kolumnnamn not in df.columns:
         print(f"⚠️ Kolumnen '{kolumnnamn}' saknas i '{fil.name}'.")
         print(f"Tillgängliga kolumner: {list(df.columns)}")
