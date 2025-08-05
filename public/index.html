@@ -1,277 +1,400 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Korrelationer mellan betyg och frånvaro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --bg: #f5f7fa;
+      --card-bg: #ffffff;
+      --primary: #0d47a1;
+      --radius: 8px;
+      --shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
       font-family: 'Inter', sans-serif;
-      padding: 40px;
-      background-color: #f9f9f9;
+      background: var(--bg);
       color: #333;
     }
-    h1, h2 {
-      color: #1a237e;
+
+    h1,
+    h2 {
+      color: var(--primary);
+      margin-top: 0;
     }
+
+    .filter-bar {
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      padding: 10px 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-group label {
+      font-weight: 600;
+    }
+
+    .filter-group select {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 5px;
+      margin-left: auto;
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
     .container {
       max-width: 1200px;
-      margin: auto;
+      margin: 20px auto;
+      padding: 0 15px;
     }
+
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 20px;
+      flex: 1 1 200px;
+    }
+
+    .card .value {
+      font-size: 2em;
+      font-weight: 600;
+    }
+
+    .corr-low .value {
+      color: #2e7d32;
+    }
+
+    .corr-medium .value {
+      color: #f57c00;
+    }
+
+    .corr-high .value {
+      color: #c62828;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
     table {
-      border-collapse: collapse;
       width: 100%;
-      margin-bottom: 40px;
-      background-color: white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      border-radius: 8px;
-      overflow: hidden;
+      border-collapse: collapse;
+      min-width: 600px;
     }
-    th, td {
-      border: 1px solid #eee;
+
+    th,
+    td {
       padding: 12px;
       text-align: left;
+      border-bottom: 1px solid #eee;
     }
+
     th {
-      background-color: #e3f2fd;
+      background: #e3f2fd;
       cursor: pointer;
+      position: relative;
     }
+
+    .sort-indicator {
+      margin-left: 5px;
+      font-size: 0.8em;
+    }
+
     .negativ {
       background-color: #ffebee;
     }
+
     .positiv {
       background-color: #e8f5e9;
     }
-    .dashboard {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
-    .card {
-      background: #fff;
-      padding: 20px;
-      flex: 1;
-      min-width: 250px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .card h3 {
-      margin-top: 0;
-      color: #0d47a1;
-    }
-    .filter {
-      margin-bottom: 20px;
-    }
-    .filter label {
-      margin-right: 10px;
-      font-weight: 600;
-    }
-    .filter select {
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    .tabell-section {
-      margin-bottom: 40px;
+
+    @media (max-width: 600px) {
+      .filter-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .tabs {
+        margin-left: 0;
+      }
+
+      table {
+        min-width: 500px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Korrelationer mellan betyg och frånvaro</h1>
-
-    <div class="filter">
-      <label for="filter">Välj korrelation:</label>
-      <select id="filter">
-        <option value="alla">Visa alla</option>
-        <option value="ogiltig">Ogiltig frånvaro</option>
-        <option value="total">Total frånvaro</option>
-        <option value="merit">Meritvärde</option>
-      </select>
-
-      <label for="lasar-select" style="margin-left:20px;">Läsår:</label>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label for="lasar-select">Läsår:</label>
       <select id="lasar-select">
         <option value="alla">Alla</option>
       </select>
-
-      <label for="arskurs-select" style="margin-left:20px;">Årskurs:</label>
+    </div>
+    <div class="filter-group">
+      <label for="arskurs-select">Årskurs:</label>
       <select id="arskurs-select">
         <option value="alla">Alla</option>
         <option value="6">Åk 6</option>
         <option value="9">Åk 9</option>
       </select>
     </div>
-
-    <div class="dashboard" id="dashboard"></div>
-
-    <div id="ogiltig-section" class="tabell-section">
-      <h2>Ogiltig frånvaro</h2>
-      <table id="ogiltig"></table>
-    </div>
-    <div id="total-section" class="tabell-section">
-      <h2>Total frånvaro</h2>
-      <table id="total"></table>
-    </div>
-    <div id="merit-section" class="tabell-section">
-      <h2>Meritvärde</h2>
-      <table id="merit"></table>
+    <div class="tabs">
+      <button class="tab active" data-tab="ogiltig-section">Ogiltig</button>
+      <button class="tab" data-tab="total-section">Total</button>
+      <button class="tab" data-tab="merit-section">Merit</button>
     </div>
   </div>
 
-<script>
-const LASAR = "2024-2025";
-const JSON_PATH = `json/${LASAR}`;
-let dataOgiltig = [], dataTotal = [], dataMerit = [];
-const lasarSet = new Set();
+  <div class="container">
+    <h1>Korrelationer mellan betyg och frånvaro</h1>
+    <div class="dashboard" id="dashboard"></div>
 
-function byggTabell(data, tabellId) {
-  const table = document.getElementById(tabellId);
-  table.innerHTML = "";
-  if (!data.length) return;
-  const header = Object.keys(data[0]);
-  const thead = table.createTHead();
-  const row = thead.insertRow();
-  header.forEach((key, i) => {
-    const cell = row.insertCell();
-    cell.outerHTML = `<th onclick="sorteraKolumn('${tabellId}', ${i})">${key}</th>`;
-  });
-  const tbody = table.createTBody();
-  data.forEach(rowData => {
-    const row = tbody.insertRow();
-    header.forEach(key => {
-      const cell = row.insertCell();
-      cell.textContent = rowData[key];
-      if (key === "Korrelation") {
-        const v = parseFloat(rowData[key]);
-        if (v > 0.2) cell.classList.add("positiv");
-        if (v < -0.2) cell.classList.add("negativ");
-      }
+    <div id="ogiltig-section" class="tab-content active">
+      <h2>Ogiltig frånvaro</h2>
+      <div class="table-wrapper">
+        <table id="ogiltig"></table>
+      </div>
+    </div>
+
+    <div id="total-section" class="tab-content">
+      <h2>Total frånvaro</h2>
+      <div class="table-wrapper">
+        <table id="total"></table>
+      </div>
+    </div>
+
+    <div id="merit-section" class="tab-content">
+      <h2>Meritvärde</h2>
+      <div class="table-wrapper">
+        <table id="merit"></table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LASAR = "2024-2025";
+    const JSON_PATH = `json/${LASAR}`;
+    let dataOgiltig = [], dataTotal = [], dataMerit = [];
+    const lasarSet = new Set();
+
+    function buildTable(data, tableId) {
+      const table = document.getElementById(tableId);
+      table.innerHTML = "";
+      if (!data.length) return;
+      const header = Object.keys(data[0]);
+      const thead = table.createTHead();
+      const row = thead.insertRow();
+      header.forEach((key, i) => {
+        const th = document.createElement("th");
+        th.innerHTML = `${key}<span class="sort-indicator"></span>`;
+        th.addEventListener("click", () => sortColumn(tableId, i));
+        row.appendChild(th);
+      });
+      const tbody = table.createTBody();
+      data.forEach(r => {
+        const tr = tbody.insertRow();
+        header.forEach(key => {
+          const td = tr.insertCell();
+          td.textContent = r[key];
+          if (key === "Korrelation") {
+            const v = parseFloat(r[key]);
+            if (v > 0.2) td.classList.add("positiv");
+            if (v < -0.2) td.classList.add("negativ");
+          }
+        });
+      });
+    }
+
+    function sortColumn(tableId, col) {
+      const table = document.getElementById(tableId);
+      const tbody = table.tBodies[0];
+      const rows = Array.from(tbody.rows);
+      const isNum = !isNaN(parseFloat(rows[0].cells[col].textContent));
+      const current = (table.dataset.sortCol == col) ? table.dataset.sortDir : "asc";
+      const dir = current === "asc" ? "desc" : "asc";
+      rows.sort((a, b) => {
+        const A = a.cells[col].textContent;
+        const B = b.cells[col].textContent;
+        return isNum ? (parseFloat(A) - parseFloat(B)) * (dir === "asc" ? 1 : -1)
+                     : A.localeCompare(B) * (dir === "asc" ? 1 : -1);
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      table.dataset.sortCol = col;
+      table.dataset.sortDir = dir;
+      table.querySelectorAll(".sort-indicator").forEach(i => i.textContent = "");
+      const indicator = table.tHead.rows[0].cells[col].querySelector(".sort-indicator");
+      indicator.textContent = dir === "asc" ? "▲" : "▼";
+    }
+
+    function filterData(data, year, grade) {
+      return data.filter(r =>
+        (year === "alla" || r["Läsår"] === year) &&
+        (grade === "alla" || String(r["Årskurs"]) === grade)
+      );
+    }
+
+    function updateTables() {
+      const year = document.getElementById("lasar-select").value;
+      const grade = document.getElementById("arskurs-select").value;
+      buildTable(filterData(dataOgiltig, year, grade), "ogiltig");
+      buildTable(filterData(dataTotal, year, grade), "total");
+      buildTable(filterData(dataMerit, year, grade), "merit");
+    }
+
+    function updateYearDropdown() {
+      const select = document.getElementById("lasar-select");
+      select.innerHTML = '<option value="alla">Alla</option>';
+      Array.from(lasarSet).sort().forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        select.appendChild(opt);
+      });
+    }
+
+    function addCard(title, value, klass = "") {
+      const card = document.createElement("div");
+      card.className = `card ${klass}`;
+      card.innerHTML = `<h3>${title}</h3><div class="value">${value}</div>`;
+      document.getElementById("dashboard").appendChild(card);
+    }
+
+    function getCorrClass(v) {
+      const abs = Math.abs(v);
+      if (abs >= 0.5) return "corr-high";
+      if (abs >= 0.2) return "corr-medium";
+      return "corr-low";
+    }
+
+    document.getElementById("lasar-select").addEventListener("change", updateTables);
+    document.getElementById("arskurs-select").addEventListener("change", updateTables);
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".tab-content").forEach(sec => sec.classList.remove("active"));
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
     });
-  });
-}
 
-function sorteraKolumn(tabellId, kolumnIndex) {
-  const table = document.getElementById(tabellId);
-  const tbody = table.tBodies[0];
-  const rows = Array.from(tbody.rows);
-  const isNum = !isNaN(parseFloat(rows[0].cells[kolumnIndex].textContent));
-  const sorted = rows.sort((a, b) => {
-    const valA = a.cells[kolumnIndex].textContent;
-    const valB = b.cells[kolumnIndex].textContent;
-    return isNum ? valB - valA : valA.localeCompare(valB);
-  });
-  sorted.forEach(row => tbody.appendChild(row));
-}
-
-function filterData(data, year, arskurs) {
-  return data.filter(
-    r =>
-      (year === "alla" || r["Läsår"] === year) &&
-      (arskurs === "alla" || String(r["Årskurs"]) === arskurs)
-  );
-}
-
-function uppdateraTabeller() {
-  const year = document.getElementById("lasar-select").value;
-  const arskurs = document.getElementById("arskurs-select").value;
-  byggTabell(filterData(dataOgiltig, year, arskurs), "ogiltig");
-  byggTabell(filterData(dataTotal, year, arskurs), "total");
-  byggTabell(filterData(dataMerit, year, arskurs), "merit");
-}
-
-function uppdateraLasarDropdown() {
-  const select = document.getElementById("lasar-select");
-  select.innerHTML = "<option value=\"alla\">Alla</option>";
-  Array.from(lasarSet).sort().forEach(y => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    select.appendChild(opt);
-  });
-}
-
-function läggTillKort(titel, värde, klass = "") {
-  const card = document.createElement("div");
-  card.className = `card ${klass}`;
-  card.innerHTML = `<h3>${titel}</h3><p>${värde}</p>`;
-  document.getElementById("dashboard").appendChild(card);
-}
-
-function visaTabell(varde) {
-  ["ogiltig","total","merit"].forEach(id => {
-    const sektion = document.getElementById(`${id}-section`);
-    sektion.style.display = (varde === "alla" || varde === id) ? "" : "none";
-  });
-}
-
-document.getElementById("filter").addEventListener("change", e => visaTabell(e.target.value));
-document.getElementById("lasar-select").addEventListener("change", uppdateraTabeller);
-document.getElementById("arskurs-select").addEventListener("change", uppdateraTabeller);
-
-async function läsJsonData() {
-  const filer = [
-    "ogiltig_franvaro_pct_ak6.json",
-    "ogiltig_franvaro_pct_ak9.json",
-    "total_franvaro_pct_ak6.json",
-    "total_franvaro_pct_ak9.json",
-    "meritvarde_ak6.json",
-    "meritvarde_ak9.json",
-    "medel_meritvarde.json"
-  ];
-  try {
-    const jsondata = await Promise.all(
-      filer.map(async fil => {
-        try {
-          const response = await fetch(`${JSON_PATH}/${fil}`);
-          if (!response.ok) {
-            const msg = `Kunde inte ladda ${fil}`;
-            console.error(msg);
-            läggTillKort(msg, "", "negativ");
+    async function readJson() {
+      const files = [
+        "ogiltig_franvaro_pct_ak6.json",
+        "ogiltig_franvaro_pct_ak9.json",
+        "total_franvaro_pct_ak6.json",
+        "total_franvaro_pct_ak9.json",
+        "meritvarde_ak6.json",
+        "meritvarde_ak9.json",
+        "medel_meritvarde.json"
+      ];
+      try {
+        const jsondata = await Promise.all(files.map(async f => {
+          try {
+            const res = await fetch(`${JSON_PATH}/${f}`);
+            if (!res.ok) {
+              console.error(`Kunde inte ladda ${f}`);
+              addCard(`Kunde inte ladda ${f}`, "", "corr-high");
+              return [];
+            }
+            return await res.json();
+          } catch (err) {
+            console.error(`Fel vid hämtning av ${f}`, err);
+            addCard(`Fel vid hämtning av ${f}`, "", "corr-high");
             return [];
           }
-          return await response.json();
-        } catch (err) {
-          const msg = `Fel vid hämtning av ${fil}`;
-          console.error(msg, err);
-          läggTillKort(msg, "", "negativ");
-          return [];
-        }
-      })
-    );
-    dataOgiltig = jsondata[0].concat(jsondata[1]);
-    dataTotal = jsondata[2].concat(jsondata[3]);
-    dataMerit = jsondata[4].concat(jsondata[5]);
-    const medelMerit = jsondata[6] || [];
+        }));
+        dataOgiltig = jsondata[0].concat(jsondata[1]);
+        dataTotal = jsondata[2].concat(jsondata[3]);
+        dataMerit = jsondata[4].concat(jsondata[5]);
+        const medelMerit = jsondata[6] || [];
 
-    [...dataOgiltig, ...dataTotal, ...dataMerit].forEach(r => lasarSet.add(r["Läsår"]));
-    uppdateraLasarDropdown();
-    uppdateraTabeller();
+        [...dataOgiltig, ...dataTotal, ...dataMerit].forEach(r => lasarSet.add(r["Läsår"]));
+        updateYearDropdown();
+        updateTables();
 
-    const snittOgiltig = dataOgiltig.length
-      ? dataOgiltig.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataOgiltig.length
-      : 0;
-    const snittTotal = dataTotal.length
-      ? dataTotal.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataTotal.length
-      : 0;
-    const snittMerit = dataMerit.length
-      ? dataMerit.reduce((acc, r) => acc + parseFloat(r.Korrelation || 0), 0) / dataMerit.length
-      : 0;
-    läggTillKort("Medel korrelation – Ogiltig", dataOgiltig.length ? snittOgiltig.toFixed(2) : "N/A");
-    läggTillKort("Medel korrelation – Total", dataTotal.length ? snittTotal.toFixed(2) : "N/A");
-    läggTillKort("Medel korrelation – Meritvärde", dataMerit.length ? snittMerit.toFixed(2) : "N/A");
-    medelMerit.forEach(r => {
-      const titel = `Åk ${r["Årskurs"]} – Medel meritvärde`;
-      läggTillKort(titel, r["MedelMeritvärde"].toFixed(2));
-    });
-  } catch (error) {
-    console.error("Fel vid läsning av JSON-data:", error);
-    läggTillKort("Fel", "Kunde inte ladda data", "negativ");
-  }
-}
+        const avgOgiltig = dataOgiltig.length
+          ? dataOgiltig.reduce((a, r) => a + parseFloat(r.Korrelation || 0), 0) / dataOgiltig.length
+          : 0;
+        const avgTotal = dataTotal.length
+          ? dataTotal.reduce((a, r) => a + parseFloat(r.Korrelation || 0), 0) / dataTotal.length
+          : 0;
+        const avgMerit = dataMerit.length
+          ? dataMerit.reduce((a, r) => a + parseFloat(r.Korrelation || 0), 0) / dataMerit.length
+          : 0;
+        addCard("Medel korrelation – Ogiltig", dataOgiltig.length ? avgOgiltig.toFixed(2) : "N/A", getCorrClass(avgOgiltig));
+        addCard("Medel korrelation – Total", dataTotal.length ? avgTotal.toFixed(2) : "N/A", getCorrClass(avgTotal));
+        addCard("Medel korrelation – Meritvärde", dataMerit.length ? avgMerit.toFixed(2) : "N/A", getCorrClass(avgMerit));
+        medelMerit.forEach(r => {
+          const title = `Åk ${r["Årskurs"]} – Medel meritvärde`;
+          addCard(title, r["MedelMeritvärde"].toFixed(2));
+        });
+      } catch (error) {
+        console.error("Fel vid läsning av JSON-data:", error);
+        addCard("Fel", "Kunde inte ladda data", "corr-high");
+      }
+    }
 
-visaTabell("alla");
-läsJsonData();
-</script>
+    readJson();
+  </script>
 </body>
 </html>
+
