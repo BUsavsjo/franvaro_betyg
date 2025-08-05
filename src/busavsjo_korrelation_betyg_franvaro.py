@@ -15,25 +15,21 @@ FRANVAROTYPER = {
     "ogiltig_franvaro_pct": "Ogiltig frånvaro (%)",
     "total_franvaro_pct": "Total frånvaro (%)"
 }
+
 def spara_json(df, filnamn, årskurs):
     (JSON_MAPP).mkdir(parents=True, exist_ok=True)
     df_clean = df.copy()
 
-    # Runda korrelationer endast om de är giltiga
     df_clean["Korrelation"] = df_clean["Korrelation"].apply(
         lambda x: round(float(x), 2)
         if isinstance(x, (int, float, np.floating)) and not np.isnan(x)
         else None
     )
 
-    # Ersätt eventuella kvarvarande NaN med None
     df_clean = df_clean.astype(object).where(pd.notna(df_clean), None)
-
-    # Lägg till metadata
     df_clean["Läsår"] = LASAR
     df_clean["Årskurs"] = årskurs
 
-    # 🧩 FIX: rätt indrag här
     with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
         json.dump(
             df_clean.to_dict(orient="records"),
@@ -63,11 +59,11 @@ def analysera_korrelation(klass_varde, betyg_df):
 
     for ämne in ämnen:
         if ämne in df.columns:
-            df[ämne] = df[ämne].replace(["2", "3"], np.nan)  # filtrera bort specialkoder
+            df[ämne] = df[ämne].replace(["2", "3"], np.nan)
             df[ämne] = pd.to_numeric(df[ämne].replace(betygsskala), errors="coerce").astype("float32")
 
     for franvarotyp, beskrivning in FRANVAROTYPER.items():
-        resultat = []  # Rensas per typ
+        resultat = []
         for ämne in ämnen:
             if ämne in df.columns:
                 delmängd = df[[ämne, franvarotyp]].dropna()
@@ -90,7 +86,7 @@ def analysera_korrelation(klass_varde, betyg_df):
         filnamn = f"{franvarotyp}_ak{klass_varde}.json".replace("å", "a").replace("ä", "a").replace("ö", "o")
         spara_json(df_resultat, filnamn, årskurs=klass_varde)
         print(f"📄 Sparade {filnamn} med {len(df_resultat)} rader.")
-    # Korrelation mellan meritvärde och frånvaro
+
     merit_resultat = []
     for franvarotyp in FRANVAROTYPER.keys():
         delmängd = df[["Meritvärde", franvarotyp]].dropna()
@@ -142,12 +138,16 @@ def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
 
     betygskolumner = [col for col in df.columns if col not in icke_betygskolumner and df[col].isin(betygsskala.keys()).any()]
 
+    ogiltiga_koder = {"2", "3", "9", "Z", "Y"}
+
     meritvärden = []
     for _, rad in df.iterrows():
         betygspoäng = []
         for ämne in betygskolumner:
-            betyg = rad.get(ämne)
-            poäng = betygsskala.get(str(betyg).strip(), 0)
+            betyg = str(rad.get(ämne)).strip()
+            if betyg in ogiltiga_koder:
+                continue
+            poäng = betygsskala.get(betyg, 0)
             betygspoäng.append(poäng)
 
         har_språkval = False
@@ -174,13 +174,9 @@ if __name__ == "__main__":
         print(f"🗓️ Läser betyg för årskurs {årskurs} från {betygfil.name}")
         betyg_df = pd.read_excel(betygfil)
 
-        # Lägg till meritvärde och spara ny fil
         beräkna_och_spara_meritvärde(betyg_df, årskurs, betygfil)
 
-        # Läs om den nya filen
         ny_betygfil = betygfil.parent / betygfil.name.replace(".xlsx", "_med_merit.xlsx")
         betyg_df_med_merit = pd.read_excel(ny_betygfil)
 
-        # Kör analys
         analysera_korrelation(årskurs, betyg_df_med_merit)
-
