@@ -5,8 +5,8 @@ from pathlib import Path
 from config_paths import DATA_MAPP, JSON_MAPP, LASAR
 
 BETYGSFILER = {
-    "6": DATA_MAPP / f"betyg_ak6.xlsx",
-    "9": DATA_MAPP / f"betyg_ak9.xlsx",
+    "6": DATA_MAPP / "betyg_ak6.xlsx",
+    "9": DATA_MAPP / "betyg_ak9.xlsx",
 }
 
 FRANVARO_FIL = DATA_MAPP / "franvaro_total.xlsx"
@@ -170,6 +170,10 @@ def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
 
     df["Meritvärde"] = meritvärden
 
+    # 💡 Sätt None på elever med Meritvärde 0 i åk 6
+    if årskurs == "6":
+        df.loc[df["Meritvärde"] == 0, "Meritvärde"] = None
+
     if årskurs == "9":
         godkända_koder = {"A", "B", "C", "D", "E"}
         gy_meritvärden = []
@@ -198,7 +202,7 @@ def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
 
     ny_fil = ursprungsfil.parent / ursprungsfil.name.replace(".xlsx", "_med_merit.xlsx")
     df.to_excel(ny_fil, index=False)
-    print(f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde' och 'MeritvardeGY'.")
+    print(f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde'{', MeritvardeGY' if årskurs == '9' else ''}.")
 
 
 if __name__ == "__main__":
