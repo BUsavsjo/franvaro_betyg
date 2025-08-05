@@ -7,6 +7,7 @@ Steg i rätt ordning:
 4. Rensa och kategorisera frånvaro
 5. Skapa sammanställning `franvaro_total.xlsx`
 6. Kör korrelationsanalys mellan betyg och frånvaro
+7. Beräkna medelmeritvärde
 """
 
 import importlib.util
@@ -24,6 +25,7 @@ MODULER = [
     "busavsjo_rensa_franvaro_excel",  # 4
     "busavsjo_skapa_franvaro_total",  # 5 – NYTT steg som skapar franvaro_total.xlsx
     "busavsjo_korrelation_betyg_franvaro",  # 6
+    "busavsjo_medel_merit",                 # 7
 ]
 
 
