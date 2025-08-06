@@ -202,10 +202,14 @@ def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
 
     ny_fil = ursprungsfil.parent / ursprungsfil.name.replace(".xlsx", "_med_merit.xlsx")
     df.to_excel(ny_fil, index=False)
-    print(f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde'{', MeritvardeGY' if årskurs == '9' else ''}.")
+    print(
+        f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde" \
+        f"{', MeritvardeGY' if årskurs == '9' else ''}."
+    )
 
 
-if __name__ == "__main__":
+def korrelation_betyg_franvaro():
+    """Beräknar meritvärde och korrelation för samtliga årskurser."""
     for årskurs, betygfil in BETYGSFILER.items():
         if not betygfil.exists():
             print(f"⚠️ Betygsfil för årskurs {årskurs} saknas: {betygfil.name}")
@@ -219,3 +223,7 @@ if __name__ == "__main__":
         betyg_df_med_merit = pd.read_excel(ny_betygfil)
 
         analysera_korrelation(årskurs, betyg_df_med_merit)
+
+
+if __name__ == "__main__":
+    korrelation_betyg_franvaro()

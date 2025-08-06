@@ -11,21 +11,40 @@ Steg i rätt ordning:
 """
 
 import importlib.util
-import runpy
 import sys
 from pathlib import Path
 
 from config_paths import RAW_BETYG_DIR, RAW_FRANVARO_DIR, OUTPUT_DIR
+from busavsjo_samla_betygstxt import busavsjo_samla_txtfiler
+from busavsjo_exportera_betyg_excel import exportera_betyg_excel
+from busavsjo_samla_franvaro import busavsjo_samla_franvarorapporter
+from busavsjo_rensa_franvaro_excel import rensa_franvaro_excel
+from busavsjo_skapa_franvaro_total import skapa_franvaro_total
+from busavsjo_korrelation_betyg_franvaro import korrelation_betyg_franvaro
+from busavsjo_medel_merit import busavsjo_berakna_medel_merit
+
+
+def _samla_betygstxt():
+    """Samlar betygstextfiler för åk6 och åk9."""
+    busavsjo_samla_txtfiler(RAW_BETYG_DIR / "ak6", OUTPUT_DIR / "betyg_ak6.txt")
+    busavsjo_samla_txtfiler(RAW_BETYG_DIR / "ak9", OUTPUT_DIR / "betyg_ak9.txt")
+
+
+def _exportera_betyg_excel():
+    """Exporterar betygstextfiler till Excel."""
+    exportera_betyg_excel(OUTPUT_DIR / "betyg_ak6.txt", OUTPUT_DIR / "betyg_ak6.xlsx", "AK6")
+    exportera_betyg_excel(OUTPUT_DIR / "betyg_ak9.txt", OUTPUT_DIR / "betyg_ak9.xlsx", "AK9")
+
 
 # 🚦 Viktigt: varje steg bygger på föregående, ändra endast om du vet vad du gör
-MODULER = [
-    "busavsjo_samla_betygstxt",        # 1
-    "busavsjo_exportera_betyg_excel",  # 2
-    "busavsjo_samla_franvaro",        # 3
-    "busavsjo_rensa_franvaro_excel",  # 4
-    "busavsjo_skapa_franvaro_total",  # 5 – NYTT steg som skapar franvaro_total.xlsx
-    "busavsjo_korrelation_betyg_franvaro",  # 6
-    "busavsjo_medel_merit",                 # 7
+STEG = [
+    ("Samla betygs‑txt‑filer", _samla_betygstxt),
+    ("Exportera betyg till Excel", _exportera_betyg_excel),
+    ("Samla frånvarorapporter", busavsjo_samla_franvarorapporter),
+    ("Rensa och kategorisera frånvaro", rensa_franvaro_excel),
+    ("Skapa sammanställning franvaro_total.xlsx", skapa_franvaro_total),
+    ("Kör korrelationsanalys mellan betyg och frånvaro", korrelation_betyg_franvaro),
+    ("Beräkna medelmeritvärde", busavsjo_berakna_medel_merit),
 ]
 
 
@@ -56,31 +75,28 @@ def _kontrollera_beroenden() -> bool:
 
 def _kontrollera_mappar():
     """Verifierar att nödvändiga datamappar finns, skapar dem annars."""
-    for mapp in [RAW_BETYG_DIR, RAW_FRANVARO_DIR, OUTPUT_DIR]:
+    for mapp in [RAW_BETYG_DIR / "ak6", RAW_BETYG_DIR / "ak9", RAW_FRANVARO_DIR, OUTPUT_DIR]:
         if not mapp.exists():
             print(f"⚠️ Saknar mapp {mapp}, skapar...")
             mapp.mkdir(parents=True, exist_ok=True)
 
 
 def kör_pipeline():
-    """Kör alla moduler i den ordning som definieras i MODULER‑listan."""
+    """Kör alla steg i pipeline i fördefinierad ordning."""
     if not _kontrollera_beroenden():
         sys.exit(1)
 
     _kontrollera_mappar()
 
-    for modul in MODULER:
-        print(f"\n▶ Kör {modul}...")
+    for namn, funktion in STEG:
+        print(f"\n▶ {namn}...")
         try:
-            runpy.run_module(modul, run_name="__main__")
-        except ModuleNotFoundError as e:
-            print(f"❌ Hittade inte modulen '{e.name}'.\nKontrollera beroenden eller PYTHONPATH.")
-            break
+            funktion()
         except FileNotFoundError as e:
             print(f"❌ Fil saknas: {e.filename}")
             break
         except Exception as e:
-            print(f"❌ Ett fel uppstod i '{modul}': {e}")
+            print(f"❌ Ett fel uppstod i steget '{namn}': {e}")
             break
     else:
         print("\n✅ Pipeline klar utan kritiska fel!")
@@ -88,3 +104,4 @@ def kör_pipeline():
 
 if __name__ == "__main__":
     kör_pipeline()
+
