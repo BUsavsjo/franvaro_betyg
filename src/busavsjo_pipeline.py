@@ -8,6 +8,8 @@ Steg i rätt ordning:
 5. Skapa sammanställning `franvaro_total.xlsx`
 6. Kör korrelationsanalys mellan betyg och frånvaro
 7. Beräkna medelmeritvärde
+8. Lägg till kön i meritfiler
+9. Analysera data per kön
 """
 
 import importlib.util
@@ -26,6 +28,8 @@ MODULER = [
     "busavsjo_skapa_franvaro_total",  # 5 – NYTT steg som skapar franvaro_total.xlsx
     "busavsjo_korrelation_betyg_franvaro",  # 6
     "busavsjo_medel_merit",                 # 7
+    "busavsjo_gender",                      # 8
+    "busavsjo_korrelation_gender",          # 9
 ]
 
 
