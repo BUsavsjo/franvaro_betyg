@@ -22,14 +22,19 @@ def skapa_franvaro_total():
         print("❌ Nödvändiga kolumner saknas i rensad data.")
         return
 
+    # Bygg ny dataframe
     df_ut = df[["personnr", "närvaro_pct", "ogiltig_frånvaro_pct"]].copy()
     df_ut = df_ut.rename(columns={
         "personnr": "PersonNr",
         "närvaro_pct": "narvaro_pct",
         "ogiltig_frånvaro_pct": "ogiltig_franvaro_pct"
     })
-    df_ut["total_franvaro_pct"] = 100 - df_ut["narvaro_pct"]
 
+    # Beräkna total och giltig frånvaro
+    df_ut["total_franvaro_pct"] = 100 - df_ut["narvaro_pct"]
+    df_ut["giltig_franvaro_pct"] = df_ut["total_franvaro_pct"] - df_ut["ogiltig_franvaro_pct"]
+
+    # Rensa bort rader utan personnummer
     df_ut.dropna(subset=["PersonNr"], inplace=True)
 
     df_ut.to_excel(FIL_TOTAL, index=False)

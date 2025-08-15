@@ -13,7 +13,8 @@ FRANVARO_FIL = DATA_MAPP / "franvaro_total.xlsx"
 
 FRANVAROTYPER = {
     "ogiltig_franvaro_pct": "Ogiltig frånvaro (%)",
-    "total_franvaro_pct": "Total frånvaro (%)"
+    "total_franvaro_pct": "Total frånvaro (%)",
+    "giltig_franvaro_pct": "Giltig frånvaro (%)"
 }
 
 

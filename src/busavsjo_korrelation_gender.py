@@ -12,7 +12,8 @@ FRANVARO_FIL = OUTPUT_DIR / "franvaro_total.xlsx"
 
 FRANVAROTYPER = {
     "ogiltig_franvaro_pct": "Ogiltig frånvaro (%)",
-    "total_franvaro_pct": "Total frånvaro (%)"
+    "total_franvaro_pct": "Total frånvaro (%)",
+    "giltig_franvaro_pct": "Giltig frånvaro (%)"
 }
 
 ämnen_ak6 = ["BI", "En", "Hkk", "idh", "Ma", "mu", "No", "So", "Sv", "Sva", "Tk"]
