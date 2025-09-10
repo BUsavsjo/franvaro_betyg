@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analys av frånvaro och betyg</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a237e;
+      --accent: #0d47a1;
+      --bg: #f4f6f9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    header p {
+      margin: 0.5rem 0 0;
+      font-weight: 300;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      max-width: 1200px;
+      margin: auto;
+      padding: 2rem;
+      gap: 2rem;
+    }
+    aside {
+      flex: 0 0 250px;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      height: fit-content;
+    }
+    aside h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+    .option {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .option input {
+      margin-right: 0.5rem;
+    }
+    main {
+      flex: 1;
+    }
+    .welcome {
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background: #1565c0;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+      background: #e8eaf6;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        padding: 1rem;
+      }
+      aside {
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Analys av frånvaro och betyg</h1>
+    <p>Välkommen! Utforska sambandet mellan närvaro och skolresultat.</p>
+  </header>
+
+  <div class="container">
+    <aside>
+      <h2>Välj korrelationer</h2>
+      <form id="correlationForm">
+        <label class="option">
+          <input type="checkbox" value="ogiltig"> Ogiltig frånvaro
+        </label>
+        <label class="option">
+          <input type="checkbox" value="total"> Total frånvaro
+        </label>
+        <label class="option">
+          <input type="checkbox" value="merit"> Meritvärde
+        </label>
+        <label class="option">
+          <input type="checkbox" value="amnesvis"> Ämnesvis korrelation
+        </label>
+        <button type="submit">Se korrelationer</button>
+      </form>
+    </aside>
+
+    <main>
+      <div class="welcome">
+        <h2>Vad vill du undersöka?</h2>
+        <p>
+          Med denna visualiseringstjänst kan du analysera hur olika typer av frånvaro påverkar elevers betyg. Använd urvalet till vänster för att filtrera det du vill se i nästa steg.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    © 2025 Sävsjö kommun – Barn och utbildning
+  </footer>
+
+  <script>
+    document.getElementById('correlationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const vals = Array.from(document.querySelectorAll('.option input:checked'))
+                        .map(el => el.value)
+                        .join(',');
+      const url = vals ? `index.html?types=${encodeURIComponent(vals)}` : 'index.html';
+      window.location.href = url;
+    });
+  </script>
+</body>
+</html>

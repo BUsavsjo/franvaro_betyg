@@ -1,201 +1,221 @@
-# busavsjo_korrelation_betyg_franvaro.py (uppdaterad version)
 import pandas as pd
-import hashlib
+import numpy as np
 import json
-from openpyxl.styles import PatternFill
-from openpyxl import load_workbook
-from config_paths import OUTPUT_DIR
+from pathlib import Path
+from config_paths import DATA_MAPP, JSON_MAPP, LASAR
 
-# === INSTÄLLNINGAR ===
-DATA_MAPP = OUTPUT_DIR
-FIL_FRANVARO = DATA_MAPP / "franvaro_rensad_kategoriserad.xlsx"
-FRANVARO_FLIK = "Rensad data"
-BETYG_FIL = DATA_MAPP / "betyg.xlsx"
-OUTPUT_FIL = DATA_MAPP / "busavsjo_korrelation_input.xlsx"
-RESULTAT_FIL = DATA_MAPP / "busavsjo_korrelation_resultat.xlsx"
-JSON_MAPP = DATA_MAPP / "json"
-
-IGNORERA_KOLUMNER = {
-    "System", "Datum", "Version", "Skolenhetskod",
-    "Klass", "Förnamn", "Efternamn", "PersonNr",
+BETYGSFILER = {
+    "6": DATA_MAPP / "betyg_ak6.xlsx",
+    "9": DATA_MAPP / "betyg_ak9.xlsx",
 }
-BETYGSKOLUMNER = None
-MODERNA_SPRÅK_KOLUMNER = {"M1(betyg)", "M2(betyg)"}
 
-# === FUNKTIONER ===
-def normalisera_personnummer(pnr):
-    try:
-        return str(pnr).strip()
-    except:
-        return None
+FRANVARO_FIL = DATA_MAPP / "franvaro_total.xlsx"
 
-def skapa_anonym_id(pnr):
-    return hashlib.sha256(str(pnr).encode('utf-8')).hexdigest()
+FRANVAROTYPER = {
+    "ogiltig_franvaro_pct": "Ogiltig frånvaro (%)",
+    "total_franvaro_pct": "Total frånvaro (%)"
+}
 
-def mappa_betyg_till_siffra(df, kolumner):
-    betygsskala = ['F', 'E', 'D', 'C', 'B', 'A']
-    betyg_poang = {b: i for i, b in enumerate(betygsskala)}
-    for kol in kolumner:
-        ny_kol = kol + "_num"
-        df[ny_kol] = df[kol].map(betyg_poang)
-    return df
 
-def tolka_korrelation(k):
-    if pd.isna(k):
-        return "okänd"
-    k_abs = abs(k)
-    if k_abs >= 0.7:
-        styrka = "Tydlig koppling"
-    elif k_abs >= 0.4:
-        styrka = "Måttlig koppling"
-    elif k_abs >= 0.2:
-        styrka = "Svag koppling"
-    else:
-        styrka = "Obetydlig eller ingen koppling"
-    riktning = "Negativ (mer frånvaro → lägre betyg)" if k < 0 else "Positiv (mer frånvaro → högre betyg)"
-    return f"{styrka} – {riktning}"
-
-def farg_gradient(k):
-    if pd.isna(k):
-        return None
-    k = max(min(k, 1), -1)
-    if k < 0:
-        r = int(244 + (255 - 244) * (k + 1))
-        g = int(204 + (255 - 204) * (k + 1))
-        b = int(204 + (255 - 204) * (k + 1))
-    else:
-        r = int(255 - (255 - 217) * k)
-        g = int(255 - (255 - 234) * k)
-        b = int(255 - (255 - 211) * k)
-    return PatternFill(start_color=f"{r:02X}{g:02X}{b:02X}", fill_type="solid")
-
-# === STEG 1 ===
-betyg_df = pd.read_excel(BETYG_FIL, dtype={"PersonNr": str})
-BETYGSKOLUMNER = [kol for kol in betyg_df.columns if kol not in IGNORERA_KOLUMNER]
-
-betyg_df["AnonymID"] = (
-    betyg_df["PersonNr"].apply(normalisera_personnummer).apply(skapa_anonym_id)
-)
-betyg_df.drop(columns=[c for c in IGNORERA_KOLUMNER if c in betyg_df.columns], inplace=True)
-betyg_df = mappa_betyg_till_siffra(betyg_df, BETYGSKOLUMNER)
-
-# === STEG 2 ===
-franvaro_df = pd.read_excel(FIL_FRANVARO, sheet_name=FRANVARO_FLIK)
-franvaro_df = franvaro_df[franvaro_df["personnr"].notna()]
-franvaro_df["AnonymID"] = franvaro_df["personnr"].apply(normalisera_personnummer).apply(skapa_anonym_id)
-franvaro_df = franvaro_df[["AnonymID", "årskurs", "ogiltig_frånvaro_pct", "närvaro_pct"]]
-franvaro_df["total_frånvaro"] = 100 - franvaro_df["närvaro_pct"]
-
-# === STEG 3 ===
-samman_df = pd.merge(betyg_df, franvaro_df, on="AnonymID")
-
-# === Infoga meritvärde före export ===
-betygspoang = {'F': 0, 'E': 10, 'D': 12.5, 'C': 15, 'B': 17.5, 'A': 20}
-
-def meritvarde(rad):
-    poang = [betygspoang.get(b, 0) for b in rad if pd.notna(b)]
-    topp = 17 if MODERNA_SPRÅK_KOLUMNER.intersection(BETYGSKOLUMNER) else 16
-    return sum(sorted(poang, reverse=True)[:topp])
-
-samman_df["meritvarde"] = samman_df[BETYGSKOLUMNER].apply(meritvarde, axis=1)
-
-# === STEG 4 ===
-korrelationer = []
-for betyg in [f"{amne}_num" for amne in BETYGSKOLUMNER]:
-    for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
-        if betyg in samman_df.columns and kol in samman_df.columns:
-            x, y = samman_df[betyg], samman_df[kol]
-            if x.notna().sum() >= 2 and y.notna().sum() >= 2:
-                corr = x.corr(y)
-                if pd.notna(corr):
-                    korrelationer.append({
-                        "Ämne": betyg.replace("_num", ""),
-                        "Frånvarotyp": kol,
-                        "Korrelation": round(corr, 2),
-                        "Styrka": tolka_korrelation(corr)
-                    })
-
-# === STEG 5 ===
-samman_df.to_excel(OUTPUT_FIL, index=False)
-# === STEG 6 ===
-if korrelationer:
-    resultat_df = pd.DataFrame(korrelationer)
-    ogiltig_df = resultat_df[resultat_df["Frånvarotyp"] == "ogiltig_frånvaro_pct"]
-    total_df = resultat_df[resultat_df["Frånvarotyp"] == "total_frånvaro"]
-
-    with pd.ExcelWriter(RESULTAT_FIL, engine='openpyxl') as writer:
-        ogiltig_df.to_excel(writer, index=False, sheet_name="Ogiltig frånvaro")
-        total_df.to_excel(writer, index=False, sheet_name="Total frånvaro")
-
-    wb = load_workbook(RESULTAT_FIL)
-    for bladnamn in ["Ogiltig frånvaro", "Total frånvaro"]:
-        ws = wb[bladnamn]
-        for rad in range(2, ws.max_row + 1):
-            cell = ws.cell(row=rad, column=3)
-            try:
-                value = float(cell.value)
-                fill = farg_gradient(value)
-                if fill:
-                    cell.fill = fill
-            except:
-                continue
-    wb.save(RESULTAT_FIL)
-
-# === STEG 7 ===
-JSON_MAPP.mkdir(parents=True, exist_ok=True)
-
-def spara_json(df, filnamn):
+def spara_json(df, filnamn, årskurs):
+    (JSON_MAPP).mkdir(parents=True, exist_ok=True)
     df_clean = df.copy()
-    df_clean["Korrelation"] = df_clean["Korrelation"].apply(lambda x: round(x, 2) if pd.notna(x) else None)
-    df_clean = df_clean.where(pd.notna(df_clean), None)
+
+    df_clean["Korrelation"] = df_clean["Korrelation"].apply(
+        lambda x: round(float(x), 2)
+        if isinstance(x, (int, float, np.floating)) and not np.isnan(x)
+        else None
+    )
+
+    df_clean = df_clean.astype(object).where(pd.notna(df_clean), None)
+    df_clean["Läsår"] = LASAR
+    df_clean["Årskurs"] = årskurs
+
     with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
-        json.dump(df_clean.to_dict(orient="records"), f, indent=2, ensure_ascii=False)
+        json.dump(
+            df_clean.to_dict(orient="records"),
+            f,
+            indent=2,
+            ensure_ascii=False,
+            default=lambda x: float(x) if isinstance(x, (np.floating, np.integer)) and not pd.isna(x) else None,
+            allow_nan=False,
+        )
 
-spara_json(ogiltig_df, "ogiltig_franvaro.json")
-spara_json(total_df, "total_franvaro.json")
 
-# === STEG 8 ===
-print("\n📊 Korrelation mellan MERITVÄRDE och frånvaro:\n")
-betygspoang = {'F': 0, 'E': 10, 'D': 12.5, 'C': 15, 'B': 17.5, 'A': 20}
+def analysera_korrelation(klass_varde, betyg_df):
+    ämnen_ak6 = ["BI", "En", "Hkk", "idh", "Ma", "mu", "No", "So", "Sv", "Sva", "Tk"]
+    ämnen_ak9 = ["BI", "En", "Hkk", "idh", "Ma", "mu", "Bi", "Fy", "Ke", "Ge", "Hi", "Re", "Sh", "SI", "Sv", "Sva", "Tn", "Tk"]
+    ämnen = ämnen_ak6 if klass_varde == "6" else ämnen_ak9
 
-def meritvarde(rad):
-    poang = [betygspoang.get(b, 0) for b in rad if pd.notna(b)]
-    topp = 17 if MODERNA_SPRÅK_KOLUMNER.intersection(BETYGSKOLUMNER) else 16
-    return sum(sorted(poang, reverse=True)[:topp])
+    betygsskala = {
+        "A": 20,
+        "B": 17.5,
+        "C": 15,
+        "D": 12.5,
+        "E": 10,
+        "F": 0,
+    }
 
-samman_df["meritvarde"] = samman_df[BETYGSKOLUMNER].apply(meritvarde, axis=1)
+    franvaro_df = pd.read_excel(FRANVARO_FIL)
+    df = pd.merge(betyg_df, franvaro_df, on="PersonNr", how="inner")
 
-korrelation_merit = []
-for kol in ["ogiltig_frånvaro_pct", "total_frånvaro"]:
-    x, y = samman_df["meritvarde"], samman_df[kol]
-    if x.notna().sum() >= 2 and y.notna().sum() >= 2:
-        k = x.corr(y)
-        korrelation_merit.append({
-            "Typ": kol,
-            "Korrelation": round(k, 2),
-            "Styrka": tolka_korrelation(k)
-        })
+    for ämne in ämnen:
+        if ämne in df.columns:
+            df[ämne] = df[ämne].replace(["2", "3"], np.nan)
+            df[ämne] = pd.to_numeric(df[ämne].replace(betygsskala), errors="coerce").astype("float32")
 
-# === STEG 9 ===
-if korrelation_merit:
-    merit_df = pd.DataFrame(korrelation_merit)
-    with pd.ExcelWriter(RESULTAT_FIL, engine='openpyxl', mode='a') as writer:
-        merit_df.to_excel(writer, index=False, sheet_name="Meritvärde vs frånvaro")
+    for franvarotyp, beskrivning in FRANVAROTYPER.items():
+        resultat = []
+        for ämne in ämnen:
+            if ämne in df.columns:
+                delmängd = df[[ämne, franvarotyp]].dropna()
+                if not delmängd.empty and delmängd[franvarotyp].nunique() > 1 and delmängd[ämne].nunique() > 1:
+                    korrelation = delmängd[ämne].corr(delmängd[franvarotyp])
+                    if pd.isna(korrelation):
+                        korrelation = None
+                else:
+                    korrelation = None
 
-    wb = load_workbook(RESULTAT_FIL)
-    ws = wb["Meritvärde vs frånvaro"]
-    for rad in range(2, ws.max_row + 1):
-        cell = ws.cell(row=rad, column=2)
-        try:
-            value = float(cell.value)
-            fill = farg_gradient(value)
-            if fill:
-                cell.fill = fill
-        except:
+                styrka = styrkebedömning(korrelation)
+                resultat.append({
+                    "Ämne": ämne,
+                    "Frånvarotyp": franvarotyp,
+                    "Korrelation": korrelation,
+                    "Styrka": styrka
+                })
+
+        df_resultat = pd.DataFrame(resultat)
+        filnamn = f"{franvarotyp}_ak{klass_varde}.json".replace("å", "a").replace("ä", "a").replace("ö", "o")
+        spara_json(df_resultat, filnamn, årskurs=klass_varde)
+        print(f"📄 Sparade {filnamn} med {len(df_resultat)} rader.")
+
+    merit_resultat = []
+    for franvarotyp in FRANVAROTYPER.keys():
+        delmängd = df[["Meritvärde", franvarotyp]].dropna()
+        if (
+            not delmängd.empty
+            and delmängd[franvarotyp].nunique() > 1
+            and delmängd["Meritvärde"].nunique() > 1
+        ):
+            korrelation = delmängd["Meritvärde"].corr(delmängd[franvarotyp])
+            if pd.isna(korrelation):
+                korrelation = None
+        else:
+            korrelation = None
+
+        styrka = styrkebedömning(korrelation)
+        merit_resultat.append(
+            {
+                "Ämne": "Meritvärde",
+                "Frånvarotyp": franvarotyp,
+                "Korrelation": korrelation,
+                "Styrka": styrka,
+            }
+        )
+
+    df_merit = pd.DataFrame(merit_resultat)
+    filnamn_merit = f"meritvarde_ak{klass_varde}.json"
+    spara_json(df_merit, filnamn_merit, årskurs=klass_varde)
+    print(f"📄 Sparade {filnamn_merit} med {len(df_merit)} rader.")
+
+
+def styrkebedömning(k):
+    if k is None:
+        return "saknas"
+    k_abs = abs(k)
+    if k_abs < 0.1:
+        return "ingen"
+    elif k_abs < 0.3:
+        return "svag"
+    elif k_abs < 0.5:
+        return "måttlig"
+    elif k_abs < 0.7:
+        return "stark"
+    else:
+        return "mycket stark"
+
+
+def beräkna_och_spara_meritvärde(df, årskurs: str, ursprungsfil: Path):
+    betygsskala = {"A": 20, "B": 17.5, "C": 15, "D": 12.5, "E": 10, "F": 0}
+    språkvalskolumner = ["M1(betyg)", "M2(betyg)"]
+    icke_betygskolumner = ["PersonNr", "Namn", "Klass"] + språkvalskolumner
+
+    betygskolumner = [
+        col for col in df.columns
+        if col not in icke_betygskolumner and df[col].isin(betygsskala.keys()).any()
+    ]
+
+    ogiltiga_koder = {"2", "3", "9", "Z", "Y"}
+
+    meritvärden = []
+    for _, rad in df.iterrows():
+        betygspoäng = []
+        for ämne in betygskolumner:
+            betyg = str(rad.get(ämne)).strip()
+            if betyg in ogiltiga_koder:
+                continue
+            poäng = betygsskala.get(betyg, 0)
+            betygspoäng.append(poäng)
+
+        har_språkval = False
+        for kolumn in språkvalskolumner:
+            betyg = rad.get(kolumn)
+            if isinstance(betyg, str) and betyg.strip() in betygsskala and betyg != "F":
+                har_språkval = True
+                break
+
+        max_antal = 17 if har_språkval else 16
+        poäng_summa = sum(sorted(betygspoäng, reverse=True)[:max_antal])
+        meritvärden.append(poäng_summa)
+
+    df["Meritvärde"] = meritvärden
+
+    # 💡 Sätt None på elever med Meritvärde 0 i åk 6
+    if årskurs == "6":
+        df.loc[df["Meritvärde"] == 0, "Meritvärde"] = None
+
+    if årskurs == "9":
+        godkända_koder = {"A", "B", "C", "D", "E"}
+        gy_meritvärden = []
+        for idx, rad in df.iterrows():
+            sv = str(rad.get("Sv", "")).strip()
+            sva = str(rad.get("Sva", "")).strip()
+            en = str(rad.get("En", "")).strip()
+            ma = str(rad.get("Ma", "")).strip()
+
+            sv_sva_godkänd = sv in godkända_koder or sva in godkända_koder
+            en_godkänd = en in godkända_koder
+            ma_godkänd = ma in godkända_koder
+
+            antal_godkända = 0
+            for ämne in betygskolumner:
+                betyg = str(rad.get(ämne)).strip()
+                if betyg in godkända_koder:
+                    antal_godkända += 1
+
+            if sv_sva_godkänd and en_godkänd and ma_godkänd and antal_godkända >= 8:
+                gy_meritvärden.append(meritvärden[idx])
+            else:
+                gy_meritvärden.append(None)
+
+        df["MeritvardeGY"] = gy_meritvärden
+
+    ny_fil = ursprungsfil.parent / ursprungsfil.name.replace(".xlsx", "_med_merit.xlsx")
+    df.to_excel(ny_fil, index=False)
+    print(f"💾 Sparade {ny_fil.name} med kolumnerna 'Meritvärde'{', MeritvardeGY' if årskurs == '9' else ''}.")
+
+
+if __name__ == "__main__":
+    for årskurs, betygfil in BETYGSFILER.items():
+        if not betygfil.exists():
+            print(f"⚠️ Betygsfil för årskurs {årskurs} saknas: {betygfil.name}")
             continue
-    wb.save(RESULTAT_FIL)
+        print(f"🗓️ Läser betyg för årskurs {årskurs} från {betygfil.name}")
+        betyg_df = pd.read_excel(betygfil)
 
-    for rad in korrelation_merit:
-        filnamn = "merit_" + ("ogiltig" if "ogiltig" in rad["Typ"] else "total") + "_franvaro.json"
-        with (JSON_MAPP / filnamn).open("w", encoding="utf-8") as f:
-            json.dump(rad, f, indent=2, ensure_ascii=False)
+        beräkna_och_spara_meritvärde(betyg_df, årskurs, betygfil)
+
+        ny_betygfil = betygfil.parent / betygfil.name.replace(".xlsx", "_med_merit.xlsx")
+        betyg_df_med_merit = pd.read_excel(ny_betygfil)
+
+        analysera_korrelation(årskurs, betyg_df_med_merit)

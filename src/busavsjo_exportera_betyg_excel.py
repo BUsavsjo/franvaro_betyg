@@ -1,20 +1,21 @@
+# === busavsjo_exportera_betyg_excel.py ===
 import openpyxl
-from config_paths import OUTPUT_DIR
+from config_paths import OUTPUT_DIR, LASAR
+from pathlib import Path
 
-# Definiera rubrikerna
-headers = [
+# Två varianter av kolumnrubriker
+HEADERS_AK6 = [
     "System", "Datum", "Version", "PersonNr", "Skolenhetskod", "Klass", "Förnamn", "Efternamn",
-    "BI", "En", "Hkk", "idh", "Ma", "m1(språk)", "M1(betyg)", "M2(språk)", "M2(betyg)", 
-    "ModM_anm", "Modmalbe", "mu", "No", "Bi", "Fy", "Ke", "So", "Ge", "Hi", "Re", "Sh", "SI", 
-    "Sv", "Sva", "Tn", "Tk", "Ovr"
+    "BI", "En", "Hkk", "idh", "Ma", "m1(språk)", "M1(betyg)", "M2(språk)", "M2(betyg)",
+    "ModM_anm", "Modmalbe", "mu", "No", "So", "Sv", "Sva", "Tk", "Ovr"
 ]
 
-# Sätt sökvägar via konfigurerade mappar
-DATA_MAPP = OUTPUT_DIR
-TXT_FIL = DATA_MAPP / "betyg.txt"
-EXCEL_FIL = DATA_MAPP / "betyg.xlsx"
-
-# Funktion för att formattera personnummer till YYMMDD-XXXX utan apostrof
+HEADERS_AK9 = [
+    "System", "Datum", "Version", "PersonNr", "Skolenhetskod", "Klass", "Förnamn", "Efternamn",
+    "BI", "En", "Hkk", "idh", "Ma", "m1(språk)", "M1(betyg)", "M2(språk)", "M2(betyg)",
+    "ModM_anm", "Modmalbe", "mu", "Bi", "Fy", "Ke", "Ge", "Hi", "Re", "Sh", "SI",
+    "Sv", "Sva", "Tn", "Tk", "Ovr"
+]
 
 def formatera_personnummer(pnr):
     pnr = pnr.replace("-", "").replace(" ", "")
@@ -24,37 +25,52 @@ def formatera_personnummer(pnr):
         return pnr[2:8] + "-" + pnr[8:]
     return pnr
 
-def exportera_betyg_excel():
-    """Läser ``betyg.txt`` och skapar ``betyg.xlsx`` i output-mappen."""
+def avgor_headers(lines):
+    for line in lines:
+        parts = line.strip().split(';')
+        if len(parts) > 5:
+            klass = parts[5].strip().upper()
+            if klass.startswith("6"):
+                print("📘 Klass indikerar AK6 – använder AK6-struktur.")
+                return HEADERS_AK6
+            elif klass.startswith("9"):
+                print("📙 Klass indikerar AK9 – använder AK9-struktur.")
+                return HEADERS_AK9
+    print("⚠️ Klass kunde inte tolkas – standard till AK6.")
+    return HEADERS_AK6
 
-    # Försök att läsa in filen som UTF-8
+def exportera_betyg_excel(txt_fil: Path, excel_fil: Path, struktur: str = None):
+    if not txt_fil.exists():
+        print(f"⚠️ Filen '{txt_fil}' saknas – hoppar över export.")
+        return
+
     try:
-        with TXT_FIL.open('r', encoding='utf-8') as f:
+        with txt_fil.open('r', encoding='utf-8') as f:
             lines = f.readlines()
     except UnicodeDecodeError:
-        # Om det misslyckas, försök med cp1252 och ersätt icke-dekodbara tecken
-        with TXT_FIL.open('r', encoding='cp1252', errors='replace') as f:
+        with txt_fil.open('r', encoding='cp1252', errors='replace') as f:
             lines = f.readlines()
 
-    # Skapa en ny arbetsbok
+    if struktur == "AK6":
+        headers = HEADERS_AK6
+    elif struktur == "AK9":
+        headers = HEADERS_AK9
+    else:
+        headers = avgor_headers(lines)
+
     wb = openpyxl.Workbook()
     ws = wb.active
-
-    # Skriv in rubrikerna på första raden
     ws.append(headers)
 
-    # Bearbeta varje rad i betyg.txt
     for line in lines:
         line = line.strip()
         if not line:
-            continue  # hoppa över tomma rader
+            continue
 
         row = line.split(';')
-
         if len(row) > 3:
-            row[3] = formatera_personnummer(row[3])  # kolumn 4 = PersonNr
+            row[3] = formatera_personnummer(row[3])
 
-        # Justera om raden har fler eller färre fält än headers
         if len(row) > len(headers):
             row = row[:len(headers)]
         elif len(row) < len(headers):
@@ -62,11 +78,22 @@ def exportera_betyg_excel():
 
         ws.append(row)
 
-    # Spara arbetsboken
-    wb.save(EXCEL_FIL)
-
-    print(f"Filen {EXCEL_FIL} har skapats framgångsrikt.")
-
+    wb.save(excel_fil)
+    print(f"✅ Filen '{excel_fil.name}' har skapats i '{excel_fil.parent}'.")
 
 if __name__ == "__main__":
-    exportera_betyg_excel()
+    BASE = Path(__file__).resolve().parent.parent
+    lasar = LASAR
+    base_out = BASE / "data" / "output" / lasar
+
+    exportera_betyg_excel(
+        txt_fil=base_out / "betyg_ak6.txt",
+        excel_fil=base_out / "betyg_ak6.xlsx",
+        struktur="AK6"
+    )
+
+    exportera_betyg_excel(
+        txt_fil=base_out / "betyg_ak9.txt",
+        excel_fil=base_out / "betyg_ak9.xlsx",
+        struktur="AK9"
+    )
